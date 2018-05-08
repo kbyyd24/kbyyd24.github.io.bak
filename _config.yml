@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
+title: Melo Blog
 subtitle:
-description:
+description: Carmelo is a basketball player, I like him. Melo is a nickname.
 keywords:
-author: John Doe
-language:
-timezone:
+author: Yuexiang Gao
+language: Chinese
+timezone: 
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: http://kbyyd24.github.io/test
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -78,4 +78,6 @@ theme: landscape
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  type:
+  type: git
+  repository: git@github.com:kbyyd24/hexo-test.git
+  branch: master
