@@ -80,4 +80,4 @@ theme: landscape
 deploy:
   type: git
   repository: git@github.com:kbyyd24/hexo-test.git
-  branch: master
+  branch: gh-pages
