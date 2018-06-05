@@ -11,7 +11,7 @@ date: 2016-05-27
 
 这个部分不想自己写了，参见 sf 上的[这篇文章](https://segmentfault.com/a/1190000004985253)就很容易理解。
 
-### 我的理解
+## 我的理解
 
 `https`并不是一个全新的协议，而是一个组合的协议，是`ssl`与`http`组合而来的，其模型如下图
 ![alt text](https://cattail.me/assets/how-https-works/tcp-ip-model.png)
@@ -31,7 +31,7 @@ date: 2016-05-27
 
 按照这个逻辑，我们就可以对所有应用层的协议进行加密工作，比如`sftp`。另外，最让码农感觉幸福的是，只要服务器做好配置，我们不需要修改代码，只需要修改接口的协议，其加密过程对于程序来说是透明的。
 
-# letsencrypt
+## letsencrypt
 
 Let's Encrypt 是一个提供免费`SSL`证书的项目，托管在`github`上：
 [https://github.com/letsencrypt/letsencrypt](https://github.com/letsencrypt/letsencrypt)
