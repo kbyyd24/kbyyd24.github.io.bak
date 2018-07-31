@@ -1,0 +1,76 @@
+---
+title: 契约测试小结
+date: 2018*07*20 00:40:10
+tags: 
+    - Contracts-Test
+    - Test
+---
+
+现在的项目上在尝试契约测试这个东西，使用了大半年，再加上业余的一些研究，简单的总结一下。
+
+== 契约测试解决的问题
+
+契约测试是在微服务实践中提出的，目的是为了避免在服务进行集成测试的时候，因为 `consumer` 对接口的期望和 `provider` 提供的接口的不一致导致的返工。因为这一反馈周期较长，返工的成本也就显得很高昂。
+
+契约测试就是为了解决这样的问题。它可以约定接口接收到什么样的请求的时候，返回什么样的响应。这样，在集成测试**之前**，就能够知道这些服务在 `API` 层面上能不能正常工作。
+
+这里强调在集成测试**之前**是想说明，契约测试不是用来替代集成测试的，而是测试方法的一种补充。
+
+== 契约测试的工具
+
+目前来看，契约测试有两大主流工具， https://docs.pact.io/[Pact] 和 https://cloud.spring.io/spring*cloud*contract/[Spring Cloud Contract]。
+
+=== Spring Cloud Contract
+
+作为抱紧 `Spring` 大腿的契约测试工具，`Spring Cloud Contract` 成为了以 `Spring Cloud` 作为框架的微服务项目的首选，也是众多有微服务和契约测试经验的工程师的推荐。它主要有以下特点：
+
+1. 使用 http://groovy*lang.org/[Groovy] 语言定义 `DSL`，利用了 `Groovy` 灵活的语法，可以帮助开发者写出满足需求的契约。（后来又支持了 `yaml` 的语法）
+2. `Spring` 提供了一系列的工具进行契约测试：
+    * 可以在 `consumer` 和 `provider` 的单元测试中进行契约测试
+    * 提供 `Docker`、`jar` 以及 `Maven` 包，用于启动 `stub runner`
+3. 独立的契约仓库管理契约
+4. 为契约生成独立的 `jar` 包，提供给 `consumer` 或 `provider`
+
+`Spring Cloud Contract` 的一个明显的缺点就是，只能支持能够使用 `Spring` 框架的语言，这也是抱紧 `Spring` 大腿的后果。为了解决这个问题，`Spring Cloud Contract` 又开始支持 `yaml` 格式的 `DSL` 。但是这种方式却无法为不能使用 `Spring` 的语言提供单元测试的方案，只能自己解决这个问题。
+
+=== Pact
+
+`Pact` 是一个专注于契约测试的工具，与 `Spring Cloud Contract` 不同的是，`Pact` 一定是 https://martinfowler.com/articles/consumerDrivenContracts.html[Consumer Driven Contracts]。所以我们会发现，`Pact` 会在 `consumer` 端的契约测试通过后，自动生成 `json` 格式的契约文件。然后，`provider` 可以通过文件系统、http 或者 `Broker` 的方式获取契约文件，进行契约测试。
+
+另外，`Pact` 支持多种语言，没有 `Spring Cloud Contract` 的语言限制。这样不仅适用于使用不同语言的微服务之间，甚至可以用于Web项目中的接口约定。
+
+`Pact` 还有一个杀手级功能： https://docs.pact.io/getting_started/versioning_in_the_pact_broker[Broker] 。它的基本功能是存储 `consumer` 生成的契约文件，`provider` 可以利用它来获取这些契约文件用于测试。但它还提供功能用于追踪哪些版本的契约通过了 `provider` 端的契约测试，这样在部署的时候就能清楚的哪些版本能够被部署。
+
+不过对于 `Java` 语言的 `provider` （其他语言的支持我没有研究），`Pact` 没法提供像 `Spring Cloud Contract` 一样的单元测试支持，只能将整个 `provider` 启动起来进行 `API测试` 。
+
+简单的总结一下这两个工具：
+
+* `Consumer` 端：
+** 都能提供 `CDC` 的支持，不过 `Pact` 是必须消费者驱动
+** `Spring Cloud Contract` 对消费者的技术选择有要求，否则只能使用 `stub runner` 或者自己通过 `yaml` 的方式来解决
+** `Pact` 不用写契约文件，是由 `Pact` 生成
+* `Provider` 端：
+** 都能提供测试支持
+** `Spring Cloud Contract` 支持单元测试，但是同样也只支持 `Spring` 技术栈
+** `Pact` 只能进行 `API测试` ，但不限定技术栈
+* 契约文件管理：
+** `Spring Cloud Contract` 需要手动写契约，自行管理
+** `Pact` 不用关心契约文件，由消费者的单元测试生成，生产者也不用关心契约文件的管理
+
+== 契约测试的一点经验
+
+1. 契约测试，测的不是数据内容，而是接口返回的数据格式。
++
+也就是说，当接口的输入为 1 或者 2 都能得到期望的结果而没异常产生时，就没有必要写两份契约。
+
+2. 注意管理契约测试的数据。
++
+主要是针对像 `Spring Cloud Contract` 这样的 `by sample` 类型的契约测试工具，因为是按例子来写契约，就需要注意接口之间的业务关系，需要将契约中的数据串联起来。
+
+3. 契约测试会加大工作量
++
+这是毋庸置疑的一点，因为我们把集成测试阶段的一部分事情放到了开发阶段，本身就加大了开发阶段的工作量。再加上契约测试带来的管理问题，总体而言，工作量是增加的。但不要因为这一点来质疑“将在集成测试阶段发现问题带来的长反馈周期缩短”这一初衷，只是，契约测试可能并不是一条最好的路。
+
+4. 契约测试能给开发者信心
++
+当我们的测试能够通过契约测试的时候，说明在集成的时候不太会有什么问题。对于开发人员来讲，就不太需要担心在集成时发现接口数据格式对接不上这种问题了。之所以说不太需要担心，是因为有的契约测试新手可能会绕过这个测试（也可能是`CI`没有做好的原因），假装做好了，等到集成时才发现gg。
