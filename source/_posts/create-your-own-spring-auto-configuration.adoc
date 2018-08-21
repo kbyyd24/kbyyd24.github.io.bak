@@ -1,0 +1,216 @@
+---
+title: 创建自己的 Spring auto-configuration
+tags:
+  - spring
+  - spring boot
+  - auto configure
+date: 2018-08-21 11:19:05
+---
+
+
+`Spring Boot` 为我们带来了自动配置的舒适体验，极大的提高了开发效率。当我们需要使用第三方库，而这些库没有实现 `Spring Boot Auto-Configururation` 时，我们为了避免在不同项目中的重复配置，可能需要为这些库提供 `Auto-Configuration`。
+
+`Spring Boot` 为我们提供了自定义 `auto-configuration` 的方法，可以让我们方便的定义自己的 `bean` 如何注入容器，这样，我们可以将和 `Spring` 集成的代码集中起来，减少不必要的重复配置。
+
+== Spring 如何实现自动配置
+
+https://www.jianshu.com/p/346cac67bfcc[简书上的这篇文章] 对 `Spring Boot` 如何实现自动配置做了比较详细的介绍。
+
+简单来说，`Spring Boot` 提供了 `spring-boot-autoconfigure` 来实现自动配置，利用 `@Conditional` 注解判断需要配置的内容。`Spring core` 中的 `SpringFactoriesLoader` 类则会扫描 `classpath` 下所有的 JAR 包中 `META-INF/spring.factories` 里的内容。这个文件里包含了很多 `Spring` 里需要的内容，比如 `ApplicationContextInitializer` 、`ApplicationListener` 等类的子类信息，`Spring` 将会根据各自在生命周期中需要加载的时间进行加载。
+
+[source,properties]
+.spring boot autoconfigure 中的 spring.factories 部分内容
+----
+# Initializers
+org.springframework.context.ApplicationContextInitializer=\
+org.springframework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer,\
+org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener
+
+# Application Listeners
+org.springframework.context.ApplicationListener=\
+org.springframework.boot.autoconfigure.BackgroundPreinitializer
+
+# Auto Configuration Import Listeners
+org.springframework.boot.autoconfigure.AutoConfigurationImportListener=\
+org.springframework.boot.autoconfigure.condition.ConditionEvaluationReportAutoConfigurationImportListener
+
+# Auto Configuration Import Filters
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+org.springframework.boot.autoconfigure.condition.OnClassCondition
+
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration
+
+# Failure analyzers
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+org.springframework.boot.autoconfigure.diagnostics.analyzer.NoSuchBeanDefinitionFailureAnalyzer,\
+org.springframework.boot.autoconfigure.jdbc.DataSourceBeanCreationFailureAnalyzer,\
+org.springframework.boot.autoconfigure.jdbc.HikariDriverConfigurationFailureAnalyzer,\
+org.springframework.boot.autoconfigure.session.NonUniqueSessionRepositoryFailureAnalyzer
+
+# Template availability providers
+org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider=\
+org.springframework.boot.autoconfigure.freemarker.FreeMarkerTemplateAvailabilityProvider,\\
+org.springframework.boot.autoconfigure.thymeleaf.ThymeleafTemplateAvailabilityProvider,\
+org.springframework.boot.autoconfigure.web.servlet.JspTemplateAvailabilityProvider
+----
+
+在 `Spring Boot autoconfigure` 中，提供了 `AutoConfigurationImportSelector` 类用来读取 `spring.factories` 中的 `org.springframework.boot.autoconfigure.EnableAutoConfiguration` 的值，然后 `Spring` 会加载这里读到的所有的 `Configuration`。这些被读取到的 `Configuration` 一定要是 `Auto-configuration class`，在 `Spring` 中，被 `@Configuration` 注解的类就符合这个条件。
+
+== 实现自己的 auto configuration
+
+根据前面的理解，我们很容易想到如何来实现自己的 auto configuration。
+
+1. 编写自定义的配置类，并加上 `@Configuration` 注解
+2. 在 `resources` 目录下创建 `META-INF/spring.factories`
+
+在 `Spring` 官网，也详细的讲述了如何实现自己的自动配置：https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-developing-auto-configuration.html
+
+我们来看一个实际的例子。`github` 上面有一个项目叫做 https://github.com/vorburger/MariaDB4j[MariaDB4j]。它可以为我们的 Java 项目提供一个 `embedded mariaDB`。然而在与 `Spring Boot` 集成的时候发现，如果要将 `mariaDB4j` 作为一个 `bean` 注入到我们的 `Spring Context` 里，我们需要确保在 `mariaDB` 启动之后，`Spring` 才会去加载 `dataSource`。我们不得不重写一个 `dataSource` 来注入 `Spring`。
+
+[source, java]
+----
+@Bean
+@DependsOn("mariaDB4j") #<1>
+public DataSource dataSource(DataSourceProperties dataSourceProperties) {
+    return DataSourceBuilder.create()
+            .driverClassName(dataSourceProperties.getDriverClassName())
+            .url(dataSourceProperties.getUrl())
+            .username(dataSourceProperties.getUsername())
+            .password(dataSourceProperties.getPassword())
+            .build();
+}
+----
+<1> `dataSource` 需要等待 `mariaDB4j` 加载完成才能被加载
+
+显然，我们不想在每次使用的时候都要写一份这样的代码，如果能够单纯的把 `mariaDB4j` 引入到我们的 `classpath` 中就能使用，那才是我们期望的用法。所以我选择了为它添加 `auto-configuration` 的方式。
+
+=== 创建 MariaDB4jSpringConfiguration
+
+将 `MariaDB4j` 源码拉下来之后，新建了一个名为 `mariaDB4j-springboot` 的 `sub module`。然后加上我们需要的依赖。
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>mariaDB4j</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-autoconfigure-processor</artifactId>
+        <optional>true</optional>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+----
+
+然后，添加我们的 `Auto-configuration class`
+
+[source,java]
+@Configuration
+public class MariaDB4jSpringConfiguration {
+    @Bean
+    public MariaDB4jSpringService mariaDB4j() {
+        return new MariaDB4jSpringService();
+    }
+}
+
+接下来，我们需要测试这个配置类能够被成功的加载。这里的测试我还没有理解到，仅仅是按照官网的例子来写了一个测试：
+
+[source,java]
+----
+public class MariaDB4JSpringConfigurationTest {
+
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(MariaDB4jSpringConfiguration.class));
+
+    @Test
+    public void shouldAutoConfigureEmbeddedMariaDB() {
+        this.contextRunner.withUserConfiguration(MariaDB4jSpringConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasSingleBean(MariaDB4jSpringService.class);
+                    assertThat(context.getBean(MariaDB4jSpringService.class))
+                            .isSameAs(context.getBean(MariaDB4jSpringConfiguration.class).mariaDB4j());
+                });
+    }
+
+}
+----
+
+这里的不理解在于，创建的这个 `ApplicationContextRunner` 类不能自动的去扫描 `bean` 而要让我们手动的去加载它。这样一来，就不能通过这个测试来验证这个类会被自动配置。
+
+=== 创建 dataSource bean
+
+在 `mariaDB4j` 启动完成后，我们就能创建 `dataSource` 了。因为 `Spring` 在 `dataSource` 创建后会尝试连接，所以一定要保证 `mariaDB4j` 先创建。
+
+[source,java]
+----
+@Bean
+@DependsOn("mariaDB4j") #<1>
+public DataSource dataSource(DataSourceProperties dataSourceProperties) {
+    return DataSourceBuilder.create()
+            .driverClassName(dataSourceProperties.getDriverClassName())
+            .url(dataSourceProperties.getUrl())
+            .username(dataSourceProperties.getUsername())
+            .password(dataSourceProperties.getPassword())
+            .build();
+}
+----
+<1> 通过 `bean` 的名称来判断需要依赖哪个 `bean`
+
+=== 添加 spring.factories
+
+有了这些，`Spring` 还不能自动配置我们的配置类，我们还需要在 `src/main/resources/META-INF` 下添加 `spring.factories` 文件，让 `Spring` 扫描这个文件后知道哪些类可以自动配置。
+
+[source,properties]
+----
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  ch.vorburger.mariadb4j.springboot.autoconfigure.MariaDB4jSpringConfiguration,\
+  ch.vorburger.mariadb4j.springboot.autoconfigure.DataSourceAutoConfiguration
+----
+
+这里添加的类名一定是包含 `package` 的全名，否则 `Spring` 找不到指定的类。
+
+---
+
+现在，我们已经完成了自动配置的工作，打包好后就能使用了：
+
+[source,bash]
+.打包
+----
+mvn clean install
+----
+
+然后我们能够在本地 `maven` 仓库看到 `ch/vorburger/mariaDB4j` 目录下多了一个 `mariaDB4j-springboot`， 接下来就能使用了。
+
+[source,gradle]
+----
+dependencies {
+  testCompile("ch.vorburger.mariaDB4j:mariaDB4j-springboot:2.3.1-SNAPSHOT")
+}
+----
+
+这次的实践提了一个 `PR` 到 https://github.com/vorburger/MariaDB4j/pull/153/(mariaDB4j)，也算是通过实践来学习了。
+
+== 总结
+
+要实现自己的 `auto-configuration` 还算简单，只需要两步：
+
+1. 添加自己的 `Configuration` 类
+2. 将自己添加的配置类写到 `META-INF/spring.factories` 里
+
+但是，这背后的实现却有些复杂，值得深入研究。这里会涉及到 `Spring` 的大量知识，包括各种包的依赖、`spring.factories` 的读取、`@Conditional` 注解等等，每一个都可以研究一下写一篇博客出来🐶🐶。
