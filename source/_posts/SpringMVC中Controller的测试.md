@@ -1,9 +1,12 @@
 ---
 title: SpringMVC中Controller的测试
 date: 2017-06-04
+description: 记录如何在 SpringMVC 中测试接口
 ---
 
 > 参考 [http://www.jianshu.com/p/ad7995332dd9](http://www.jianshu.com/p/ad7995332dd9)
+
+<!-- more -->
 
 controller:
 
