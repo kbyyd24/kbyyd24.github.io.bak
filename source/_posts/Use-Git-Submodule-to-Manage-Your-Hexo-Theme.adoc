@@ -1,0 +1,100 @@
+---
+title: 使用 git submodule 管理 Hexo theme
+tags:
+  - hexo
+  - git
+  - submodule
+date: 2018-12-20 01:26:17
+---
+
+
+个人十分喜欢 `Hexo` 博客框架下的 `NexT` 主题，所以自己的博客也就选择的这个主题。然而最近换了电脑之后傻眼了，`git clone` 之后发现 `themes/next` 是个空目录，`github` 上面也是同样的空目录，并且没有任何办法可以找回当时目录里的东西。回顾自己当时刚开始使用时的场景，一切要从 `NexT` 的官网说起。
+
+== NexT 官方推荐的安装方式
+
+`Hexo` 博客框架允许我们指定任何主题，被选定的主题需要在 `${root}/themes` 目录下具有一个与指定名称相同的目录。比如，我们指定使用的主题名字叫做 `next` ，那么我们就需要在 `${root}/themes` 目录下面存在一个叫做 `next` 的目录（本文不涉及此目录内容）。
+
+现在我们有了一个想要使用的目录，假设就是 `NexT` 吧，自然会想到去官方网站看看有没有什么推荐的使用方式。于是 `NexT` 官网让我们这样安装：
+
+[source,shell]
+----
+$ cd your-hexo-site
+$ git clone https://github.com/iissnan/hexo-theme-next themes/next
+----
+
+不仅是 `NexT`，还有很多其他的主题都是推荐的这样的安装方式。而这样的安装方式却会带来 `git` 仓库嵌套的问题。我们会发现我们的 `Hexo` 仓库不能识别到 `${root}/themes/next` 仓库里面修改的内容，只能识别到它被修改了。这也就意味着，我们的 `Hexo` 仓库不知道 `${root}/themes/next` 仓库里的内容。所以我们在克隆这个仓库之后，不知道这个主题下的文件从哪里来，有什么内容。
+
+> 关于 `git` 嵌套仓库的问题，可以参考这里的讨论： https://github.com/swcarpentry/git-novice/issues/272
+
+== 正确的使用方式
+
+现在，我们已经知道使用嵌套的 `git` 仓库是一个 `anti-pattern`，并且会导致我们丢失文件。那么正确的做法应该是什么呢？
+
+=== git submodule 天降神兵
+
+首先解决“从哪里来”的问题。
+
+因为我们需要使用到别人开发的主题，而且要做一些自定义修改，所以我们必须要拿到源码。这个时候我们就可以考虑使用 `git submodule` 了，这里正好满足使用 `submodule` 的情况。
+
+> `git submodule` 文档看这里： https://git-scm.com/book/en/v2/Git-Tools-Submodules
+
+要使用 `git submodule` 我们就不能按照 `NexT` 这些主题官网提供的安装方式，而需要使用 `git submodule` 的方式：
+
+[source,shell]
+----
+$ git submodule add git@github.com:iissnan/hexo-theme-next themes/next
+Cloning into '/I/wont/show/this/blog/themes/next'...
+remote: Enumerating objects: 12036, done.
+remote: Total 12036 (delta 0), reused 0 (delta 0), pack-reused 12036
+Receiving objects: 100% (12036/12036), 12.95 MiB | 1.32 MiB/s, done.
+Resolving deltas: 100% (6967/6967), done.
+----
+
+现在，我们的 `submodule` 已经克隆好了，并且在我们的 `Hexo` 目录下面会多一个 `.gitmodules` 文件，我们可以看看里面的内容：
+
+[source,shell]
+----
+$ cat .gitmodules
+[submodule "themes/next"]
+	path = themes/next
+	url = git@github.com:iissnan/hexo-theme-next
+----
+
+这个文件描述了当前仓库的 `submodule` 的信息，并且它会被加入到仓库中。因为我们在使用 `git clone` 的时候， `git` 不会帮我们把 `submodule` 一起克隆。
+
+所以当其他人或我们在其他地方克隆这个仓库之后，就能够通过 `.gitmodules` 这个文件知道我们所需要的 `submodule` 能够从哪里获取到。
+
+我们可以通过 `git` 的命令来获取所有的 `submodule`：
+
+[source,shell]
+----
+$ git submodule update --init
+Submodule 'themes/next' (git@github.com:iissnan/hexo-theme-next) registered for path 'themes/next'
+Cloning into '/I/wont/show/this/blog/themes/next'...
+Submodule path 'themes/next': checked out '64302633a60c8f26ebdbad6f3c220e6d8a69723c'
+----
+
+这样，我们的 `NexT` 主题又能够回到我们本地的文件中。
+
+=== 要好好保存自己的修改
+
+然后解决“有什么内容”的问题。
+
+`submodule` 解决了“从哪里来”，但是我们对主题做的自定义修改又保存在哪里呢？
+
+如果我们真的按照上面的步骤来操作的话，我们会发现在新设备上的主题配置和我们自定义的配置是不一样的。这样以来，我们新的设备上如果提交，我们自定义的主题配置信息就会丢失了。除非我们重新配置一下主题文件。
+
+*但我们是程序员，会永远遵循 `DRY` 原则*，一定是什么地方出了差错。
+
+前面的操作，我们把 `NexT` 官方仓库作为我们的 `submodule`，但因为我们不能把自定义的配置 `push` 到官方仓库中，所以我们对主题的自定义配置就只能留在本地。
+
+为了保存我们的修改，我们可以将官方仓库 `fork` 到我们自己的账号下面，获得完全的控制权，然后将这个 `fork` 的仓库作为博客的 `submodule`。当我们对主题进行了配置的时候，我们需要将这些更新 `push` 到 `fork` 的仓库中，这样在下一次拉取 `submodule` 的时候就能够拿到我们自己的修改，而不会遇到丢失自定义配置的尴尬了。
+
+
+---
+
+所以，在 `Hexo` 中对自定义主题进行版本管理的正确操作就是：
+
+1. 找到主题的 `Repo`
+2. `fork` 到自己的账号下
+3. 将 `fork` 的仓库作为 `Hexo` 仓库的 `submodule`
