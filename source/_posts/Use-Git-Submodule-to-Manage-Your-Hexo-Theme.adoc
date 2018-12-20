@@ -1,5 +1,5 @@
 ---
-title: 使用 git submodule 管理 Hexo theme
+title: 使用 git submodule 管理 Hexo 博客的主题
 tags:
   - hexo
   - git
