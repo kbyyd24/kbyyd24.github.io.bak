@@ -93,6 +93,8 @@ Submodule path 'themes/next': checked out '64302633a60c8f26ebdbad6f3c220e6d8a697
 
 ---
 
+== 总结
+
 所以，在 `Hexo` 中对自定义主题进行版本管理的正确操作就是：
 
 1. 找到主题的 `Repo`
