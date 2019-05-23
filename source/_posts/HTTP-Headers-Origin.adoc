@@ -1,0 +1,42 @@
+---
+title: HTTP Headers 之 Origin
+tags:
+  - http
+  - header
+  - origin
+date: 2019-05-23 21:33:34
+---
+
+
+== 概念
+
+HTTP 协议中的 Origin Header **存在于请求中**，**用于指明当前请求来自于哪个站点**。
+
+=== 字段内容
+
+Origin 仅仅包含站点信息，**不包含**任何路径信息。
+
+=== 语法
+
+[source]
+----
+Origin: ""
+Origin: "<schema>://<host>[:port]"
+// 例如
+Origin: "https://baidu.com"
+// 错误示范，包含了路径信息
+Origin: "https://baidu.com/"
+----
+
+参考： https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Origin[https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Origin]
+
+== 应用
+
+=== CORS 
+
+当我们的浏览器发出跨站请求时，行为正确的服务器会校验当前请求是不是来自被允许的站点。服务器就是通过 `Origin` 字段的值来进行的判断。
+
+当服务器的配置出错时，比如配置成了 `https://baidu.com/`，则可能造成一些难以理解的问题。
+
+比如有的浏览器（IE）能够请求成功，而有的浏览器却请求失败（Chrome）。这不是因为前一个浏览器行为正确，而是因为前一个浏览器发出请求时没有带上 `Origin` 而后一个浏览器带上了正确的 `Origin`。而在服务器端，因为没有 `Origin` Header，所以认为这不是一次 `CORS` 请求，所以没有进行 `CORS` 校验。这也反过来要求服务端强制请求带上 `Origin` Header，才能进一步保证服务器的安全性。
+
