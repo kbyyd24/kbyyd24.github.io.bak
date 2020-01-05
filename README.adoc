@@ -1,0 +1,66 @@
+= Yuexiang's Blog
+
+== Where is the blog
+
+https://blog.gaoyuexiang.cn
+
+== How to clone the repo
+
+=== clone this repo
+
+[source, shell]
+----
+git clone git@github.com:kbyyd24/kbyyd24.github.io.git
+----
+
+=== clone the theme
+
+[source, shell]
+----
+git submodule update --init
+----
+
+== How to run local
+
+=== Install dependencies
+
+[source, shell]
+----
+npm install
+----
+
+=== Start the server
+
+[source, shell]
+----
+hexo server -p 3000 -o
+----
+
+== How to add new post
+
+Add a new draft/post::
+[source, shell]
+----
+hexo new draft <post_name>
+hexo new post <post_name>
+----
+Publish the draft as post::
+[source, shell]
+----
+hexo publish post <post_name>
+----
+Generate static files::
+[source, shell]
+----
+hexo generate
+----
+Deploy the new post::
+[source, shell]
+----
+hexo deploy
+----
+Save the source code change to remote repository::
+[source, shell]
+----
+git push
+----
