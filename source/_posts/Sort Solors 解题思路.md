@@ -1,6 +1,7 @@
 ---
 title: Sort Colors 解题思路
 date: 2016-07-29
+updated: 2016-07-29
 ---
 
 # 题目

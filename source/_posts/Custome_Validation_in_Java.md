@@ -1,6 +1,7 @@
 ---
 title: 定制Java中的Validation
 date: 2017-10-25
+updated: 2017-10-25
 ---
  
 # `Java Validation`简介

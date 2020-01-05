@@ -1,6 +1,7 @@
 ---
 title: 使用AOP获取RequestBody
 date: 2016-11-20
+updated: 2016-11-20
 ---
 
 一开始使用`spring拦截器`拦截请求记录日志,对于请求路径、header这些都很好获取,唯独`POST`请求无法获取其中的`RequestBody`.
