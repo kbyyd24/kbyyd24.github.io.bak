@@ -28,3 +28,4 @@ jobs:
           deploykey: ${{secrets.DEPLOY_KEY}}
           username: kbyyd24
           email: melo@gaoyuexiang.cn
+          github_token: ${{secrets.GITHUB_TOKEN}}
