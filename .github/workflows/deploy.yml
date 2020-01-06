@@ -1,0 +1,31 @@
+on: 
+  push:
+    branches: 
+      - hexo-source
+name: Deploy
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.0.0
+        with:
+          ref: hexo-source
+      - name: Install dependency
+        run: npm install
+      - name: Clean
+        uses: heowc/action-hexo@master
+        with:
+          args: clean
+      - name: Generate
+        uses: heowc/action-hexo@master
+        with:
+          args: generate
+      - name: Deploy
+        uses: heowc/action-hexo@master
+        env:
+          EMAIL: melo@gaoyuexiang.cn
+          NAME: github-action
+        with:
+          args: deploy
