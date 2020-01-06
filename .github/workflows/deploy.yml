@@ -27,5 +27,6 @@ jobs:
         env:
           EMAIL: melo@gaoyuexiang.cn
           NAME: github-action
+          ACTIONS_RUNTIME_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: deploy
