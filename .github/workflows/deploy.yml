@@ -22,11 +22,9 @@ jobs:
         uses: heowc/action-hexo@master
         with:
           args: generate
-      - name: Deploy
-        uses: heowc/action-hexo@master
-        env:
-          EMAIL: melo@gaoyuexiang.cn
-          NAME: github-action
-          ACTIONS_RUNTIME_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Hexo GitHub Action
+        uses: yrpang/github-actions-hexo@v1.1
         with:
-          args: deploy
+          deploykey: ${{secrets.DEPLOY_KEY}}
+          username: kbyyd24
+          email: melo@gaoyuexiang.cn
