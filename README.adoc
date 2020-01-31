@@ -51,18 +51,10 @@ Publish the draft as post::
 ----
 hexo publish post <post_name>
 ----
-Generate static files::
-[source, shell]
-----
-hexo generate
-----
-Deploy the new post::
-[source, shell]
-----
-hexo deploy
-----
 Save the source code change to remote repository::
 [source, shell]
 ----
 git push
 ----
+
+GitHub Action will auto deploy when `hexo-source` branch is pushed.
