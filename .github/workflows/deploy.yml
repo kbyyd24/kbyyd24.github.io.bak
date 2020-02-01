@@ -13,8 +13,9 @@ jobs:
         with:
           ref: hexo-source
       - name: Build and Deploy
-        uses: yrpang/github-actions-hexo@master
-        with:
-          deployKey: ${{ secrets.DEPLOY_KEY }}
-          username: kbyyd24_blog_publisher
-          email: melo@gaoyuexiang.cn
+        uses: Forest10/hexo-deploy-action-with-cname@master
+        env:
+          PERSON_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_REPOSITORY: kbyyd24/kbyyd24.github.io
+          BRANCH: master
+          PUBLISH_DIR: ./public
