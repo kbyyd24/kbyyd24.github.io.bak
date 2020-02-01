@@ -12,6 +12,8 @@ jobs:
         uses: actions/checkout@v2.0.0
         with:
           ref: hexo-source
+      - name: Checkout theme
+        uses: textbook/git-checkout-submodule-action@2.0.0        
       - name: Build and Deploy
         uses: Forest10/hexo-deploy-action-with-cname@master
         env:
