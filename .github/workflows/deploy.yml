@@ -13,9 +13,8 @@ jobs:
         with:
           ref: hexo-source
       - name: Build and Deploy
-        uses: renzhaosy/hexo-deploy-action@master
+        uses: yrpang/github-actions-hexo@master
         env:
-          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_REPOSITORY: kbyyd24/kbyyd24.github.io
-          BRANCH: master
-          PUBLISH_DIR: ./public
+          deployKey: ${{ secrets.DEPLOY_KEY }}
+          username: kbyyd24_blog_publisher
+          email: melo@gaoyuexiang.cn
