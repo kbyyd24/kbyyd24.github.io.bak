@@ -14,7 +14,7 @@ jobs:
           ref: hexo-source
       - name: Build and Deploy
         uses: yrpang/github-actions-hexo@master
-        env:
+        with:
           deployKey: ${{ secrets.DEPLOY_KEY }}
           username: kbyyd24_blog_publisher
           email: melo@gaoyuexiang.cn
