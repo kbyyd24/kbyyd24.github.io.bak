@@ -15,7 +15,7 @@ jobs:
       - name: Build and Deploy
         uses: Forest10/hexo-deploy-action-with-cname@master
         env:
-          PERSON_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLISH_REPOSITORY: kbyyd24/kbyyd24.github.io
           BRANCH: master
           PUBLISH_DIR: ./public
