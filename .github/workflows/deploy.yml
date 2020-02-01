@@ -12,8 +12,8 @@ jobs:
         uses: actions/checkout@v2.0.0
         with:
           ref: hexo-source
-      - name: Git Submodules Init
-        uses: chris-short/github-action-git-submodules@v0.1.0
+      - name: submodules-init
+        uses: snickerbockers/submodules-init@v4      
       - name: Build and Deploy
         uses: renzhaosy/hexo-deploy-action@master
         env:
