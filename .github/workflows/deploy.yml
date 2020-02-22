@@ -15,7 +15,7 @@ jobs:
       - name: Checkout theme
         uses: textbook/git-checkout-submodule-action@2.0.0
       - name: find updated date
-        bash: "git ls-files -z | while read -d '' path; do touch -d \"$(git log -1 --format=\"@%ct\" \"$path\")\" \"$path\"; done"
+        run: "git ls-files -z | while read -d '' path; do touch -d \"$(git log -1 --format=\"@%ct\" \"$path\")\" \"$path\"; done"
       - name: Build and Deploy
         uses: renzhaosy/hexo-deploy-action@master
         env:
