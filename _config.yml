@@ -84,4 +84,4 @@ deploy:
   branch: master
 
 excerpt:
-  depth: 2
+  depth: 1
