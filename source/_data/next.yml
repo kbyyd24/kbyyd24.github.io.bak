@@ -13,7 +13,6 @@ creative_commons:
 github_banner:
   enable: true
   permalink: https://github.com/kbyyd24
-  title: Follow me on GitHub
 
 seo: true
 
@@ -25,29 +24,29 @@ menu:
   tags: /tags/ || tags
   archives: /archives/ || archive
 
-menu_settings:
-  icons: true
-  badges: false
-
 scheme: Mist
+
+sidebar:
+  position: right
+  display: always
+  mobile: true
 
 social:
   GitHub: https://github.com/kbyyd24 || github
   E-Mail: mailto:melo@gaoyuexiang.cn || envelope
 
-auto_excerpt:
-  enable: true
-  length: 150
+tag_icon: true
 
 reward_settings:
-  enable: false
-  animation: false
+  enable: true
+  animation: true
 
 reward:
   wechatpay: /images/wechatpay.png
-  alipay: /images/alipay.png
+  alipay: /images/alipay.jpeg
 
-mobile_layout_economy: true
+# follow_me:
+  # WeChat: /images/wechatpay.png || wechat
 
 local_search:
   enable: true
@@ -57,6 +56,8 @@ pace_theme: pace-theme-loading-bar
 text_align:
   desktop: left
   mobile: left
+
+mobile_layout_economy: true
 
 toc:
   expand_all: true
@@ -70,7 +71,21 @@ symbols_count_time:
 
 codeblock:
   border_radius: 4
+  highlight_theme: solarized
   copy_button:
     enable: true
     show_result: true
-    style: flat
+    style: mac
+
+custom_file_path:
+  style: source/_data/styles.styl
+
+back2top:
+  scrollpercent: true
+
+reading_progress:
+  enable: true
+
+disqus:
+  enable: true
+  shortname: kbyyd24
