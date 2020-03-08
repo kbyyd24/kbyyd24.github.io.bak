@@ -1,0 +1,76 @@
+footer:
+  since: 2016
+  beian:
+    enable: true
+    icp: 蜀ICP备15031888号-2
+
+creative_commons:
+  license: by-nc
+  sidebar: true
+  post: true
+  language: deed.zh
+
+github_banner:
+  enable: true
+  permalink: https://github.com/kbyyd24
+  title: Follow me on GitHub
+
+seo: true
+
+index_with_subtitle: true
+
+menu:
+  home: / || home
+  about: /about/ || user
+  tags: /tags/ || tags
+  archives: /archives/ || archive
+
+menu_settings:
+  icons: true
+  badges: false
+
+scheme: Mist
+
+social:
+  GitHub: https://github.com/kbyyd24 || github
+  E-Mail: mailto:melo@gaoyuexiang.cn || envelope
+
+auto_excerpt:
+  enable: true
+  length: 150
+
+reward_settings:
+  enable: false
+  animation: false
+
+reward:
+  wechatpay: /images/wechatpay.png
+  alipay: /images/alipay.png
+
+mobile_layout_economy: true
+
+local_search:
+  enable: true
+pace: true
+pace_theme: pace-theme-loading-bar
+
+text_align:
+  desktop: left
+  mobile: left
+
+toc:
+  expand_all: true
+
+symbols_count_time:
+  awl: 2
+  symbols: true
+  time: true
+  total_symbols: true
+  total_time: true
+
+codeblock:
+  border_radius: 4
+  copy_button:
+    enable: true
+    show_result: true
+    style: flat
