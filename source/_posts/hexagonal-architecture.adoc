@@ -13,7 +13,7 @@ updated: 2020-01-05 19:26:44
 ---
 
 
-image::hexagonal-architecture.png[role="center"]
+image::images/hexagonal-architecture.png[role="center"]
 
 
 端口与适配器架构又被称为六边形架构，是一种约定代码设计的架构。它解决的是如何设计代码的问题，主要的关注点在于业务与技术的解耦。
