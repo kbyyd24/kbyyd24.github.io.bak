@@ -87,5 +87,9 @@ excerpt:
   depth: 1
 
 feed:
-  type: atom
-  path: atom.xml
+  type: 
+    - atom
+    - rss2
+  path: 
+    - atom.xml
+    - rss2.xml
