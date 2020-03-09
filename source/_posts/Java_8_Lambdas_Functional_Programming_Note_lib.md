@@ -2,6 +2,12 @@
 title: 「Java 8 函数式编程」读书笔记——类库
 date: 2017-02-08
 updated: 2017-02-08
+tag:
+  - java
+  - lambda
+  - Java Lambda
+  - Java 8
+  - 函数式编程
 ---
 本书第四章的读书笔记, 本章主要阐述: 如何使用`Lambda`表达式. 
 
