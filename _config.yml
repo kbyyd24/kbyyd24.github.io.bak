@@ -93,3 +93,4 @@ feed:
   path: 
     - atom.xml
     - rss2.xml
+  limit: 0
