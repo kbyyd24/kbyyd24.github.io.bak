@@ -2,7 +2,7 @@
 title: 「Java 8 函数式编程」读书笔记——流
 date: 2017-02-06
 updated: 2017-02-06
-tag:
+tags:
   - java
   - lambda
   - Java Lambda

@@ -2,7 +2,7 @@
 title: 「Java 8 函数式编程」读书笔记——数据并行化
 date: 2017-02-20
 updated: 2017-02-20
-tag:
+tags:
   - java
   - lambda
   - Java Lambda
