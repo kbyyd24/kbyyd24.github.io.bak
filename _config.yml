@@ -85,3 +85,7 @@ deploy:
 
 excerpt:
   depth: 1
+
+feed:
+  type: atom
+  path: atom.xml
