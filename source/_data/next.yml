@@ -45,8 +45,11 @@ reward:
   wechatpay: /images/wechatpay.png
   alipay: /images/alipay.jpeg
 
-# follow_me:
-  # WeChat: /images/wechatpay.png || wechat
+follow_me:
+  #Twitter: https://twitter.com/username || twitter
+  #Telegram: https://t.me/channel_name || telegram
+  #WeChat: /images/wechat_channel.jpg || wechat
+  RSS: /rss2.xml || rss
 
 local_search:
   enable: true
