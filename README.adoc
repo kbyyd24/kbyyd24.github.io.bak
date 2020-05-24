@@ -58,3 +58,21 @@ git push
 ----
 
 GitHub Action will auto deploy when `hexo-source` branch is pushed.
+
+== Troubleshoot
+
+=== `npm install` failed
+
+If run `npm install` on MacOs and see message:
+
+```text
+gyp: No Xcode or CLT version detected!
+```
+
+Try to fix it by running:
+
+```shell
+xcode-select --install
+// or
+xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
