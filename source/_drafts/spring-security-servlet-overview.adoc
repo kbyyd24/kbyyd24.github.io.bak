@@ -1,0 +1,114 @@
+---
+title: Spring Security Servlet 概览
+tags:
+  - Spring
+  - Spring Security
+---
+
+Spring Security 是 Spring 框架中用于实现 Security 相关需求的项目。我们可以通过使用这个框架来实现项目中的安全需求。
+
+今天这篇文章将会讨论 Spring Security Servlet 是如何工作的。
+
+之所以将内容限定到 Servlet，是因为现在 Spring Security 已经开始支持 Reactive Web Server，因为底层的技术不同，当然需要分开讨论。
+
+== Spring Security 在哪里生效
+
+我们知道，在 Servlet 中，一次请求会经过这样的阶段: client -> servlet container -> filter -> servlet
+
+而 Spring MVC 虽然引入了一些其他概念，但整体流程差别不大：
+
+image::filter-and-interceptor.png[role="center"]
+
+Spring Security 则是通过实现了 `Filter` 来实现的 Security 功能。这样一来，只要使用了 Servlet Container，就可以使用 Spring Security，不需要关心有没有使用 Spring Web 或别的 Spring 项目。
+
+
+=== DelegatingFilterProxy
+
+这是 Spring Security 实现的一个 Servlet Filter。它被加入到 Servlet Filter Chain 中，将 filter 的任务桥接给 Spring Context 管理的 bean。
+
+==== FilterChainProxy
+
+被 `DelegatingFilterProxy` 封装的一个 Filter，其实也是一个代理。这个类维护了一个 `List<SecurityFilterChain>`，它会将请求代理给这个 list 进行 filter 的工作。
+
+但这个代理不是遍历整个 list，而是通过 `RequestMatcher` 来判断是否要使用这一个 `SecurityFilterChain`。我们配置时写的 `mvcMatchers` 之类的方法就会影响到这里的判断。
+
+===== SecurityFilterChain
+
+这个接口的实现维护了一个 `Filter` 列表，这些 `Filter` 是真正进行 filter 工作的类，比如 `CorsFilter`、`UsernamePasswordAuthenticationFilter` 等。
+
+上面提到的 `RequestMatcher` 是这个接口的默认实现使用的。
+
+综上，我们可以得到一个 big picture：
+
+image::multi-securityfilterchain.png[role="center"]
+
+=== 处理 Security Exception
+
+这里说的 Security Exception，其实只有两种：`AuthenticationException` 和 `AccessDeniedException`。它们会长 `ExceptionTranslationFilter` 中被处理，而这个 Filter 往往被安排在 `SecurityFilterChain` 的最后。
+
+==== AuthenticationException
+
+这个异常代表身份认证失败。`ExceptionTranslationFilter` 会调用 `startAuthentication` 方法处理它，其流程是：
+
+1. 清理 `SecurityContextHolder` 中的身份信息（后面的身份认证内容会涉及）
+2. 将当前请求保存到 `RequestCache` 中，当用户通过身份验证后，会从其中取出当前请求，继续业务流程
+3. 调用 `AuthenticationEntryPoint`，要求用户提供身份信息。方式可以是重定向到登陆页面，也可以是返回携带 `WWW-Authenticate` header 的 HTTP 响应
+
+==== AccessDeniedException
+
+这个异常代表鉴权失败，意味着当前用户的身份已确认，但被服务拒绝了请求。
+
+`ExceptionTranslationFilter` 会将这个异常交给 `AccessDeniedHanlder` 处理。默认的实现会重定向到 `/error`，并得到一个 403 响应。
+
+---
+
+了解了 Spring Security 在哪里生效之后，我们再来看看两个重要的问题：身份认证和鉴权。
+
+== 身份认证
+
+=== SecurityContextHolder
+
+`SecurityContextHolder` 是保存身份信息的地方，默认通过 `ThreadLocal` 的方式保存 `SecurityContext`。可以通过静态方法 `SecurityContextHolder.getSecurityContext()` 获取当前线程的 `SecurityContext`。
+
+> `SecurityContextHolder.getSecurityContext()` 方法虽然是静态的，可以在任何地方调用。但个人不建议这么做，而是应该作为参数传递给使用到的方法，避免当前的 `SecurityContext` 成为隐式输入。
+
+`SecurityContext` 是一个接口，提供 `getAuthentication` 方法获取当前用户信息；`setAuthentication` 设置当前用户信息。
+
+`Authentication` 也是一个接口，它的实现保存了当前用户的信息。在身份验证的流程中，总是在围绕着 `Authentication` 操作 —— 通过 `Principal` 和 `Credentials` 判断用户身份、通过调用 `setAuthenticated` 方法保存身份认证是否通过的结果。
+
+另外，在身份验证成功后，`Authentication` 中还保存了 `GrantedAuthority` 的集合，用于后续的鉴权操作。
+
+image::securitycontextholder.png[role="center"]
+
+=== AuthenticationManager
+
+`AuthenticationManager` 提供了 `authenticate()` 方法用于进行身份验证，但并不是它自己完成，而是通过 `AuthenticationProvider` 完成。
+
+`AuthenticationProvider` 提供 `support(Authentication)` 方法用于判断是否能够验证这种类型的 `Authentication`。
+
+在 `AuthenticationManager` 的实现 `ProviderManager` 中保存了 `List<AuthenticationProvider>`。它会按顺序调用支持当前 `Authentication` 类型的 `AuthenticationProvider` 的 `authenticate` 方法，直到身份验证成功（返回值 non-null）或全部失败。
+
+在这个过程中出现的 `AuthenticationException` 将会被上面提到的 `ExceptionTranslationFilter` 处理。
+
+=== AbstractAuthenticationProcessingFilter
+
+`AbstractAuthenticationProcessingFilter.doFilter()` 方法实现了身份验证的流程，包括成功和失败的处理。
+
+它提供了一个抽象方法 `attemptAuthentication()` 用于身份验证。子类可以调用它的 `authenticationManager` 来实现 `authenticate` 的功能。
+
+整体流程如图：
+
+image::abstractauthenticationprocessingfilter.png[role="center"]
+
+其中的 `1` & `2` 都在 `attemptAuthentication()` 方法中完成，需要子类实现。
+
+`3` 通过 `successfulAuthentication()` 方法实现，可以被子类重写。
+
+`4` 中除 `SessionAuthenticationStrategy` 外都交给 `unsuccessfulAuthentication()` 方法处理，同样可以被子类重写。
+
+> 考虑到越来越多的应用都是基于无状态的 `RESTful` API，所以 `SessionAuthenticationStrategy` 不会在本文涉及
+
+
+
+
+== 鉴权
