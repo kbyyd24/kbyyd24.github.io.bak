@@ -23,7 +23,7 @@ menu:
   about: /about/ || user
   tags: /tags/ || tags
   # categories: /categories/ || th
-  topics: /topics || th
+  topics: /topics || th-list
   archives: /archives/ || archive
 
 scheme: Mist
