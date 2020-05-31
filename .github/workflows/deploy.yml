@@ -15,7 +15,7 @@ jobs:
       - name: Checkout theme
         uses: textbook/git-checkout-submodule-action@2.0.0
       - name: Build and Deploy
-        uses: renzhaosy/hexo-deploy-action@master
+        uses: ApolloZhu/hexo-deploy-action@master
         env:
           PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLISH_REPOSITORY: kbyyd24/kbyyd24.github.io
