@@ -1,0 +1,188 @@
+---
+title: Spring Security Servlet 概览
+tags:
+  - Spring
+  - Spring Security
+date: 2020-05-31 19:58:38
+updated: 2020-05-31 19:58:38
+---
+
+
+Spring Security 是 Spring 框架中用于实现 Security 相关需求的项目。我们可以通过使用这个框架来实现项目中的安全需求。
+
+今天这篇文章将会讨论 Spring Security Servlet 是如何工作的。
+
+之所以将内容限定到 Servlet，是因为现在 Spring Security 已经开始支持 Reactive Web Server，因为底层的技术不同，当然需要分开讨论。
+
+== Spring Security 在哪里生效
+
+我们知道，在 Servlet 中，一次请求会经过这样的阶段: client -> servlet container -> filter -> servlet
+
+而 Spring MVC 虽然引入了一些其他概念，但整体流程差别不大：
+
+image::filter-and-interceptor.png[role="center"]
+
+Spring Security 则是通过实现了 `Filter` 来实现的 Security 功能。这样一来，只要使用了 Servlet Container，就可以使用 Spring Security，不需要关心有没有使用 Spring Web 或别的 Spring 项目。
+
+
+=== DelegatingFilterProxy
+
+这是 Spring Security 实现的一个 Servlet Filter。它被加入到 Servlet Filter Chain 中，将 filter 的任务桥接给 Spring Context 管理的 bean。
+
+==== FilterChainProxy
+
+这是被 `DelegatingFilterProxy` 封装的一个 `Filter`，其实也是一个代理。这个类维护了一个 `List<SecurityFilterChain>`，它会将请求代理给这个 list 进行 filter 的工作。
+
+但这个代理不是遍历整个 list，而是通过 `RequestMatcher` 来判断是否要使用这一个 `SecurityFilterChain`。我们配置时写的 `mvcMatchers` 之类的方法就会影响到这里的判断。
+
+===== SecurityFilterChain
+
+这个接口的实现维护了一个 `Filter` 列表，这些 `Filter` 是真正进行 filter 工作的类，比如 `CorsFilter`、`UsernamePasswordAuthenticationFilter` 等。
+
+上面提到的 `RequestMatcher` 是这个接口的默认实现使用的。
+
+综上，我们可以得到一个 big picture：
+
+image::multi-securityfilterchain.png[role="center"]
+
+=== 处理 Security Exception
+
+这里说的 Security Exception，其实只有两种：`AuthenticationException` 和 `AccessDeniedException`。它们会在 `ExceptionTranslationFilter` 中被处理，而这个 Filter 往往被安排在 `SecurityFilterChain` 的最后。
+
+==== AuthenticationException
+
+这个异常代表身份认证失败。`ExceptionTranslationFilter` 会调用 `startAuthentication` 方法处理它，其流程是：
+
+1. 清理 `SecurityContextHolder` 中的身份信息（后面的身份认证内容会涉及）
+2. 将当前请求保存到 `RequestCache` 中，当用户通过身份验证后，会从其中取出当前请求，继续业务流程
+3. 调用 `AuthenticationEntryPoint`，要求用户提供身份信息。方式可以是重定向到登陆页面，也可以是返回携带 `WWW-Authenticate` header 的 HTTP 响应
+
+==== AccessDeniedException
+
+这个异常代表授权失败，意味着当前用户的身份已确认，但被服务拒绝了请求。
+
+`ExceptionTranslationFilter` 会将这个异常交给 `AccessDeniedHanlder` 处理。默认的实现会重定向到 `/error`，并得到一个 403 响应。
+
+---
+
+了解了 Spring Security 在哪里生效之后，我们再来看看两个重要的问题：身份认证和授权。
+
+== 身份认证
+
+=== SecurityContextHolder
+
+`SecurityContextHolder` 是保存身份信息的地方，默认通过 `ThreadLocal` 的方式保存 `SecurityContext`。可以通过静态方法 `SecurityContextHolder.getSecurityContext()` 获取当前线程的 `SecurityContext`。
+
+> `SecurityContextHolder.getSecurityContext()` 方法虽然是静态的，可以在任何地方调用。但个人不建议这么做，而是应该作为参数传递给使用到的方法，避免当前的 `SecurityContext` 成为隐式输入。
+
+`SecurityContext` 是一个接口，提供 `getAuthentication` 方法获取当前用户信息；`setAuthentication` 设置当前用户信息。
+
+`Authentication` 也是一个接口，它的实现保存了当前用户的信息。在身份验证的流程中，总是在围绕着 `Authentication` 操作 —— 通过 `Principal` 和 `Credentials` 判断用户身份、通过调用 `setAuthenticated` 方法保存身份认证是否通过的结果。
+
+另外，在身份验证成功后，`Authentication` 中还保存了 `GrantedAuthority` 的集合，表示当前用户的角色和权限，用于后续的授权操作。
+
+image::securitycontextholder.png[role="center"]
+
+=== AuthenticationManager
+
+`AuthenticationManager` 提供了 `authenticate()` 方法用于进行身份验证，但并不是它自己完成，而是通过 `AuthenticationProvider` 完成。
+
+`AuthenticationProvider` 提供 `support(Authentication)` 方法用于判断是否能够验证这种类型的 `Authentication`。
+
+在 `AuthenticationManager` 的实现 `ProviderManager` 中保存了 `List<AuthenticationProvider>`。它会按顺序调用支持当前 `Authentication` 类型的 `AuthenticationProvider` 的 `authenticate` 方法，直到身份验证成功（返回值 non-null）或全部失败。
+
+在这个过程中出现的 `AuthenticationException` 将会被上面提到的 `ExceptionTranslationFilter` 处理。
+
+=== AbstractAuthenticationProcessingFilter
+
+`AbstractAuthenticationProcessingFilter.doFilter()` 方法实现了身份验证的流程，包括成功和失败的处理。
+
+它提供了一个抽象方法 `attemptAuthentication()` 用于身份验证。子类可以调用它的 `authenticationManager` 来实现 `authenticate` 的功能。
+
+整体流程如图：
+
+image::abstractauthenticationprocessingfilter.png[role="center"]
+
+其中的 `1` & `2` 都在 `attemptAuthentication()` 方法中完成，需要子类实现。
+
+`3` 通过 `successfulAuthentication()` 方法实现，可以被子类重写。
+
+`4` 中除 `SessionAuthenticationStrategy` 外都交给 `unsuccessfulAuthentication()` 方法处理，同样可以被子类重写。
+
+> 考虑到越来越多的应用都是基于无状态的 `RESTful` API，所以 `SessionAuthenticationStrategy` 不会在本文涉及
+
+
+
+
+== 授权
+
+=== 在 Servlet 中授权
+
+Spring Security 授权的入口有很多处，关注到 Servlet 上的话，那就是 `FilterSecurityInterceptor` 这个 `Filter`。他会被配置到所有的 `AbstractAuthenticationProcessingFilter` 子类之后，这样他就能从 `SecurityContextHodler` 中得到 `Authentication`，用以进行授权。
+
+==== AccessDecisionManager
+
+授权的过程，被交给 `AccessDecisionManager` 实现，他的 `decide` 方法接收三个参数：
+
+- `Authentication`：这就是从 `SecurityContextHolder` 中拿到的对象
+- secureObject：这是一个 Object 类型，对于 `FilterSecurityIntercepter` 来说，会用 request、response 和 filterChain 创建一个 `FilterInvocation` 对象作为 secureObject
+- `Collection<ConfigAttribute>`： `FilterSecurityIntercepter` 使用 `ExpressionBasedFilterInvocationSecurityMetadataSource` 保存这些 `ConfigAttribute`，这些值用来给 `AccessDecisionManager` 提供做判断的信息
+
+`AccessDecisionManager` 自然也不是包含具体的判断逻辑的角色，真正根据上面三个参数来授权的类，其实是 `AccessDecisionVoter`。
+
+==== AccessDecisionVoter
+
+`AccessDecisionVoter` 提供一个 `vote` 方法，接收上面的 `decide` 方法一样的参数。
+
+他的实现包括 `RoleVoter` 和 `AuthenticationVoter`。顾名思义，分别是根据角色和权限信息来判断是否授权的实现。而__什么样的角色/权限可以访问这个对象__则是通过 `ConfigAttribute` 传入的。
+
+不管具体的 Voter 实现如何，最终会返回一个 `int`，只有 -1、0、1 三个值，分别表示拒绝、弃权、同意。
+
+一个 `AccessDecisionManager` 会管理多个 `AccessDecisionVoter`，最终会根据所有 voter 的结果来判断是授权成功，还是抛出 `AccessDeniedException`。
+
+具体判断的策略则是交给了 `AccessDecisionManager` 的三个实现来决定：
+
+ConsensusBased:: 
+像一般的比赛投票一样，票多的结果就是最终决定。
+可以配置票数相等（不是全部弃权）时，结果是否通过，默认值是允许通过。
+也可以配置全部弃权时，结果是否通过，默认值是不允许。
+
+AffirmativeBased::
+只要有一个 voter 同意，就允许通过。
+同样可以配置全部弃权时的决定，默认也是不允许。
+
+UnanimousBased::
+要求所有 voter 一致同意时才通过。
+同样可以配置全部弃权时的决定，默认也是不允许。
+
+=== AbstractSecurityInterceptor
+
+到此，授权用到的核心类基本介绍完了，让我们回过头来想一个问题：`FilterSecurityInterceptor` 明明是一个 `Filter`，为什么要叫做 `Interceptor`？
+
+如果回顾上面介绍的这些类，你会发现只有 `FilterSecurityInterceptor` 通过实现 `Filter` 接口和 Servlet 绑定了起来，`AccessDecisionManager` 和 `AccessDecisionVoter` 都没有和 Servlet 绑定。
+
+这么做的目的就是为了能支持 Method Security 和 AspectJ Security，这样就能复用真正做授权逻辑的代码。
+
+我们可以看到 `FilterSecurityInterceptor` 扩展了 `AbstractSecurityInterceptor`。而这个父类的另外两个实现 `MethodSecurityInterceptor` 和 `AspectJMethodSecurityInterceptor` 都是非 Servlet 的实现。由此便做到了对不同的授权方式的支持，并且复用了代码。
+
+---
+
+关于授权，还有一个很重要的 ACL 没有提到，它并没有影响整个授权的架构，这里就不写了，以后有空再说吧。
+
+== 总结
+
+这篇文章梳理了 Spring Security 在 Servlet 中的代码架构，构建了一个 big picture。
+
+通过这篇文章，我们了解到，在请求到达真正处理业务的 Controller 之前，经历了：
+
+* 各种 `AbstractAuthenticationProcessingFilter` 过滤请求，交给 `AuthenticationManager` 管理的 `AuthenticationProvider` 尝试不同的身份认证方式
+** 最终得到一个保存在 `SecurityContextHolder` 中的 `Authentication` 对象
+** 或者无法确定身份的情况下抛出 `AuthenticationException` 
+* 被 `FilterSecurityInterceptor` 过滤，使用先前创建的 `Authentication` 对象交给 `AccessDecisionManager` 授权
+** 最终成功调用业务方法
+** 或者抛出 `AccessDeniedException`
+* 上面抛出的 `AuthenticationException` 和 `AccessDeniedException` 将会被 `ExceptionTranslationFilter` 处理，转化成 401 和 403 的响应。
+
+image::securityarch.png[role="center"]
+
+有了这个 big picture，在接下来研究细节的时候，就不至于摸不着头脑了。
