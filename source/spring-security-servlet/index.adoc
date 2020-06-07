@@ -7,3 +7,5 @@ updated: 2020-05-31 20:01:34
 Spring Security 系列的文章列表：
 
 link:/2020/05/31/spring-security-servlet-overview/[Spring Security 概览]
+
+link:/2020/06/07/spring-security-authentication/[Spring Security 中的身份认证]

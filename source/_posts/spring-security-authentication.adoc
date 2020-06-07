@@ -1,0 +1,227 @@
+---
+title: Spring Security 中的身份认证
+tags:
+  - Spring
+  - Spring Security
+date: 2020-06-07 22:04:29
+updated: 2020-06-07 22:04:29
+---
+
+
+本文介绍 Spring Security 的身份认证的内容，研究 Spring Security 自带的身份认证方式和添加自己的身份认证方式的方法。
+
+== 身份认证相关组件
+
+在link:/2020/05/31/spring-security-servlet-overview/[上一篇文章]中，我们了解到了 Spring Security 会将 `DelegatingFilterProxy` 插入到 Servlet Filter Chain 中，然后将要过滤的请求通过 `FilterChainProxy` 代理给匹配的 `SecurityFilterChain`；这些 `SecurityFilterChain` 中包含着真正做安全相关工作的 `Filter`。
+
+image::filter-chain.png[title="后面提到的 Filter 都是红色方框中的",role="center"]
+
+这些 `Filter` 中的一部分，他们的职责就是进行身份验证，比如 `UsernamePasswordAuthenticationFilter`；而他们中的大多数都有一个共同的父类 `AbstractAuthenticationProcessingFilter`。
+
+=== AbstractAuthenticationProcessFilter
+
+这个类是很多身份认证的 Filter 的父类，它已经实现了 `doFilter` 方法，流程如下：
+
+image::abstract-authentication-processing-filter.png[role="center"]
+
+> 本文不涉及其中的 sessionStrategy 部分
+
+`doFilter` 已经帮我们搭好了这个流程，我们只需要关心其中的几个被调用的方法(红绿蓝三个颜色框)就可以了。
+
+==== attemptAuthentication
+
+这是一个抽象方法。子类实现的时候，需要从 `HttpServletRequest` 中获取需要的信息，构建出一个 `Authentication` 实例，然后调用父类中的 `AuthenticationManager.authenticate()` 方法，对 `Authentication` 对象进行认证。
+
+==== unsuccessfulAuthentication
+
+这个方法已经被实现，子类也可以选择重写。根据父类的实现，这个方法将完成一下步骤：
+
+. 清理 `SecurityContextHolder`
+. 清除 `RememberMeService` 中的信息（默认使用 `NullRememberMeService`）
+. 调用 `AuthenticationFailureHandler.onAuthenticationFailure()` 方法
+
+默认使用的 `AuthenticationFailureHandler` 是 `SimpleUrlAuthenticationFailureHandler`，它的逻辑是：
+
+. 如果没有配置 `defaultFailureUrl` （默认没有）
+.. 发送 401 响应
+. 根据配置的布尔值 `forwardToDestination` （默认为 `false`）判断
+.. 使用 Servlet forward 到配置的 `defaultFailureUrl`
+.. 使用 HTTP redirect 到配置的 `defaultFailureUrl`
+
+==== successfulAuthentication
+
+与 `unsuccessfulAuthentication` 方法一样，这个方法也已经实现，并且可以被重写，但其中的逻辑却恰好相反：
+
+. 将 `attemptAuthentication` 返回的 `Authentication` 对象保存到 `SecurityContextHolder` 中
+. 保存登陆信息到 `RememberMeService` 中
+. 发布 `InteractiveAuthenticationSuccessEvent` 事件，这样可以被配置的 `EventListener` 处理
+. 调用 `AuthenticationSuccessHandler.onAuthenticationSuccess()` 方法
+
+默认使用的 `AuthenticationSuccessHandler` 是 `SavedRequestAwareAuthenticationSuccessHandler`，其实现就是一次重定向。我们可以看看它重定向到哪里:
+
+* 当配置了 `alwaysUseDefaultTargetUrl` 或指定了 `targetUrlParameter` 且此参数存在的时候
+** 如果配置了 `alwaysUseDefaultTargetUrl` 则重定向到 `defaultTargetUrl`，默认是 `/`
+** 如果存在 `targetUrlParameter`（比如 redirect_uri 之类的比较常见的参数），则重定向到这个路径
+** 如果存在 `Referer`，则重定向到这个地址
+** 重定向到 `/`
+* 从 `RequestCache` 中找到了保存的请求
+** 重定向到请求中设置的重定向地址
+* 如果还是没有满足条件，则进行第一步里的逻辑
+
+> 关于 `RequestCache`：想象你正在访问一个需要认证的资源，这个时候网站会把你重定向到登陆页面；在你登陆成功后，又会重定向回刚才的资源。`RequestCache` 就是为了保存登陆之前的请求而设计的。在这里，默认使用基于 session 的实现。
+
+=== AuthenticationManager
+
+在 `AbstractAuthenticationProcessingFilter` 中保存了一个 `AuthenticationManager`，它会在子类的 `attemptAuthentication` 方法中被使用。其职责是对 `Filter` 创建的 `Authentication` 对象进行身份验证，比如查询数据库匹配用户名密码、携带的 token 是否合法等。
+
+==== ProviderManager 与 AuthenticationProvider
+
+这是 `AuthenticationManager` 常用的实现。它没有实现任何认证逻辑，而是管理了一些 `AuthenticationProvider`，通过这些 provider 来实现真正的认证功能。
+
+每个 `AuthenticationProvider` 实现一种特定类型的身份认证方式，比如用户名密码登陆、OIDC 登陆等。他们可以通过 `Authentication` 的具体类型来判断是否支持这种 `Authentication` 需要的认证方式。
+
+=== 其他的一些 Filter
+
+除了 `AbstractAuthenticationProcessFilter`，还有一些进行身份验证的 `Filter`，它们并没有继承这个类，而是基于 `OncePerRequestFilter` 自己实现了一套逻辑。这些 `Filter` 包括 `AuthenticationFilter` 、`BasicAuthenticationFilter` 、`OAuth2AuthorizationCodeGrantFilter` 等等。
+
+由于它们不再是 `AbstractAuthenticationProcessFilter`，所以不会再被要求使用 `AuthenticationManager`。尽管这样，当我们选择使用 `OncePerReuqestFilter` 来实现自定义的身份认证时，仍然可以考虑使用 `AuthenticationManager` 这种方式。
+
+> 个人觉得 `AuthenticationManager` 还算是个不错的设计，因为做到了职责分离。
+
+甚至还有更加放飞自我的 `DigestAuthenticationFilter`，直接继承 `GenericFilterBean`，在实现上也是我行我素，这里就不探究了。
+
+=== ExceptionTranslationFilter
+
+这个 Filter 不是用来进行身份验证的，而是用来处理认证授权过程中产生的异常的。它可以处理 `AuthenticationException` 和 `AccessDeniedException`，分别表示认证失败和授权失败。这篇文章只关心如何处理 `AuthenticationException`。
+
+但是这个 `Filter` 默认被安排在 `SecurityFilterChain` 的倒数第二位，所以前面的 `Filter` 抛出的异常并不能被它捕获。但自定义的 `Filter` 可以加到它后面，这样就可以利用它来处理这两种异常。
+
+> 最后一位是 `FilterSecurityInterceptor`，可能会抛出 `AccessDeniedException`。
+
+==== 处理 AuthenticationException
+
+`ExceptionTranslationFilter` 对 `AuthenticationException` 的处理分三步：
+
+. 清理 `SecurityContextHolder` 中的身份信息
+. 将当前的 request、response 保存到 `RequestCache` 中（用途可以回顾一下 <<successfulAuthentication,successfulAuthentication 方法>>）
+. 调用 `AuthenticationEntryPoint.commence()` 方法
+
+其中的 `AuthenticationEntryPoint` 具体实例取决于你的配置，默认会用到 `BasicAuthenticationEntryPoint`。这个接口的职责就是通过 `WWW-Authenticate` header 告诉客户端使用哪种方式进行身份验证。
+
+==== 处理其他异常
+
+对于 `AuthenticationException` 和 `AccessDeniedException` 之外的异常，`ExceptionTranslationFilter` 会将其转换成 `ServletException` 或 `RuntimeException` 抛出。
+
+如果想要处理这些异常，需要自己添加 `Filter` 实现。
+
+== Spring Security 自动配置的 FilterChainProxy
+
+当我们启动 Spring 应用之后，会在日志里看到打印所有配置的 `FilterChainProxy`。
+
+默认情况下，我们会看到这样的一条链：
+
+image::default-filter-chain.png[role="center"]
+
+这是引入 `spring-boot-starter-security` 之后自动配置的 `FilterChainProxy`，在引入更多的 security 相关的依赖和编写了相关配置之后，这个 filter chain 也会相应变化。
+
+== 几种内置的身份认证方式
+
+接下来，我们以 `UsernamePawwrodAuthenticationFilter` 和 `BasicAuthenticationFilter` 为例，看看他们是如何实现身份认证的。
+
+=== UsernamePasswordAuthenticationFilter
+
+`UsernamePasswordAuthenticationFilter` 是一个 `AbstractAuthenticationProcessingFilter` 的子类，实现了 `attemptAuthentication` 方法，没有重写其他方法。所以用户认证成功后，会被重定向到一个地址，具体逻辑参考上面的 <<successfulAuthentication,successfulAuthentication 方法>>。
+
+==== attemptAuthentication
+
+`attemptAuthentication` 方法会从 `HttpServletRequest.getParameter()` 方法中获取用户名密码，从而进行身份验证。具体从哪里获取用户名密码，则可以被子类通过重写 `obtainUsername()` 和 `obtainPassword()` 方法修改。
+
+之后，`UsernamePasswordAuthenticationFilter` 会构建出一个 `UsernameAuthenticationToken`，交给 `AuthenticationManager` 进行认证。
+
+==== DaoAuthenticationProvider
+
+这是 `UsernamePasswordAuthenticationFilter` 对应的 `AuthenticationProvider`，负责对 `UsernameAuthenticationToken` 进行认证。
+
+它使用一个 `UserDetailsService` 来加载用户信息，使用 `PasswordEncoder` 来匹配用户的密码。
+
+这两个接口具体使用哪一个实现，取决于具体的配置。比如 `UserDetailsService` 就有 in memory 和 JDBC 的实现。
+
+> `UsernamePasswordAuthenticationFilter` 是用于单独处理登录的 `Filter`，它不是用来在请求业务 API 时进行身份认证的 `Filter`。
+> 
+> 事实上，所有继承了 `AbstractAuthenticationProcessFilter` 但没有重写 `successfulAuthentication` 方法的 `Filter` 都是这样的，它们会在登陆成功后重定向到登录前的地址或默认的地址。这也符合它的语义：进行**身份认证流程**，而不是业务请求的一部分。
+
+=== BasicAuthenticationFilter
+
+与 `UsernamePasswordAuthenticationFilter` 不同，`BasicAuthenticationFilter` 没有继承 `AbstractAuthenticationProcessingFilter`，而是直接继承 `OncePerRequestFilter`。因为它是被使用在请求业务 API 的请求上，而不是进行身份认证流程。
+
+`BasicAuthenticationFilter` 的实现并不复杂，无非是从 `Authorization` header 中取出用户名密码，然后创建出 `UsernameAuthenticationToken`，接着调用 `AuthenticationManager.authenticate()` 方法。
+
+> 之所以它也会使用 `AuthenticationManager`，应该是出于复用的考虑。这样它就可以使用和 `UsernamePasswordAuthenticationFilter` 一样的 `AuthenticationProvider`。
+
+它与 `UsernamePasswordAuthenticationFilter` 的区别在于认证之后的行为。
+
+无论认证成功与否，`BasicAuthenticationFilter` 都不会做出重定向的响应。
+
+* 如果认证失败，则通过默认的 `BasicAuthenticationEntryPoint` 返回 401 响应
+* 如果认证成功，则继续执行 filter chain，这样就能执行到真正的业务方法
+
+== 如何添加自己的身份认证方式
+
+前面介绍了两种不同的 `Filter` 实现，以及它们被使用的场景，现在我们知道了该选择哪一种方式去实现自定义的 `Filter`。但是，如何把它们加入到 `SecurityFilterChain` 中去处理身份认证呢？
+
+=== 配置 SecurityFilterChain
+
+我们如果需要任何对 `SecurityFilterChain` 的配置，都需要扩展 `WebSecurityConfigurerAdapter`，实现自己的一个配置类。每创建这样的一个实现，都会创建一个 `SecurityFilterChain` 加入到 `FilterChainProxy` 中。
+
+==== 配置 requestMathcer
+
+我们在前一篇文章提到过，`FilterChainProxy` 需要根据 url 来判断选择哪一个 `SecurityFilterChain`。我们需要将这个配置写到这个实现类中，比如：
+
+[source,java]
+----
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+  http.requestMatchers(matcher -> matcher.mvcMatchers("/hello"));
+}
+
+----
+
+这样，`FilterChainProxy` 就知道了对 `/hello` 的请求需要使用这个 `SecurityFilterChain`。
+
+==== 向 SecurityFilterChain 加入 Filter
+
+现在有了对应的 `SecurityFilterChain`，我们就可以将自定义的 `Filter` 加入到这个 chain 中：
+
+[source,java]
+----
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+  http.addFilter(HelloFilter.class);
+}
+
+----
+
+`addFilter` 方法也有一些变体，可以控制 `Filter` 在 chain 中的位置，这里就不赘述了。
+
+==== 添加 AuthenticationProvider
+
+与 `Filter` 一样，`AuthenticationProvider` 也是被安排到单独的 `FilterChainProxy` 中的，并且需要自己配置。如果你的自定义 `Filter` 需要 `AuthenticationProvider` 的话，同样需要配置：
+
+[source,java]
+----
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+  auth.authenticationProvider(HelloAuthenticationProvider.class);
+}
+----
+
+== 总结
+
+这篇文章比较详细的梳理了 `AbstractAuthenticationProcessingFilter` 及其子类 `UsernamePasswordAuthenticationFilter` 的实现和 `BasicAuthenticationFilter` 的实现，了解了需要实现自定义身份验证的 `Filter` 时应该选择哪种方式：
+
+* 只是进行身份验证，完成后进行重定向，而不调用业务方法，那么就继承 `AbstractAuthenticationProcessFilter`
+* 需要调用业务方法，身份验证是为了保护业务，那么就继承 `OncePerRequestFilter`，完全控制认证的流程
+
+> 当然，这不是一个强制的限制，你仍然可以通过重写 `AbstractAuthenticationProcessFilter.successfulAuthentication()` 方法来修改重定向的行为。
+
+另外，也了解到了实现完 `Filter` 后，需要实现 `WebSecurityConfigurerAdapter`，将 `Filter` 加入到 `SecurityFilterChain` 中。
