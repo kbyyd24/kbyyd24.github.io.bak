@@ -190,3 +190,5 @@ image::access-decision-voting.png[role="center"]
 image::securityarch.png[role="center"]
 
 有了这个 big picture，在接下来研究细节的时候，就不至于摸不着头脑了。
+
+> 查看系列文章： link:/spring-security-servlet/[点这里]

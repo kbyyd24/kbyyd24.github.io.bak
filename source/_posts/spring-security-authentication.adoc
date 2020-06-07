@@ -225,3 +225,5 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 > 当然，这不是一个强制的限制，你仍然可以通过重写 `AbstractAuthenticationProcessFilter.successfulAuthentication()` 方法来修改重定向的行为。
 
 另外，也了解到了实现完 `Filter` 后，需要实现 `WebSecurityConfigurerAdapter`，将 `Filter` 加入到 `SecurityFilterChain` 中。
+
+> 查看系列文章： link:/spring-security-servlet/[点这里]
