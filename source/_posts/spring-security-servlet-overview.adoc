@@ -4,7 +4,7 @@ tags:
   - Spring
   - Spring Security
 date: 2020-05-31 19:58:38
-updated: 2020-05-31 19:58:38
+updated: 2020-06-10 22:16:20
 ---
 
 
@@ -59,13 +59,13 @@ image::multi-securityfilterchain.png[role="center"]
 
 ==== AccessDeniedException
 
-这个异常代表授权失败，意味着当前用户的身份已确认，但被服务拒绝了请求。
+这个异常代表权限验证失败，意味着当前用户的身份已确认，但被服务拒绝了请求。
 
 `ExceptionTranslationFilter` 会将这个异常交给 `AccessDeniedHanlder` 处理。默认的实现会重定向到 `/error`，并得到一个 403 响应。
 
 ---
 
-了解了 Spring Security 在哪里生效之后，我们再来看看两个重要的问题：身份认证和授权。
+了解了 Spring Security 在哪里生效之后，我们再来看看两个重要的问题：身份认证和权限验证。
 
 == 身份认证
 
@@ -79,7 +79,7 @@ image::multi-securityfilterchain.png[role="center"]
 
 `Authentication` 也是一个接口，它的实现保存了当前用户的信息。在身份验证的流程中，总是在围绕着 `Authentication` 操作 —— 通过 `Principal` 和 `Credentials` 判断用户身份、通过调用 `setAuthenticated` 方法保存身份认证是否通过的结果。
 
-另外，在身份验证成功后，`Authentication` 中还保存了 `GrantedAuthority` 的集合，表示当前用户的角色和权限，用于后续的授权操作。
+另外，在身份验证成功后，`Authentication` 中还保存了 `GrantedAuthority` 的集合，表示当前用户的角色和权限，用于后续的权限验证操作。
 
 image::securitycontextholder.png[role="center"]
 
@@ -114,31 +114,31 @@ image::abstractauthenticationprocessingfilter.png[role="center"]
 
 
 
-== 授权
+== 权限验证
 
-=== 在 Servlet 中授权
+=== 在 Servlet 中权限验证
 
-Spring Security 授权的入口有很多处，关注到 Servlet 上的话，那就是 `FilterSecurityInterceptor` 这个 `Filter`。他会被配置到所有的 `AbstractAuthenticationProcessingFilter` 子类之后，这样他就能从 `SecurityContextHodler` 中得到 `Authentication`，用以进行授权。
+Spring Security 权限验证的入口有很多处，关注到 Servlet 上的话，那就是 `FilterSecurityInterceptor` 这个 `Filter`。他会被配置到所有的 `AbstractAuthenticationProcessingFilter` 子类之后，这样他就能从 `SecurityContextHodler` 中得到 `Authentication`，用以进行权限验证。
 
 ==== AccessDecisionManager
 
-授权的过程，被交给 `AccessDecisionManager` 实现，他的 `decide` 方法接收三个参数：
+权限验证的过程，被交给 `AccessDecisionManager` 实现，他的 `decide` 方法接收三个参数：
 
 - `Authentication`：这就是从 `SecurityContextHolder` 中拿到的对象
 - secureObject：这是一个 Object 类型，对于 `FilterSecurityIntercepter` 来说，会用 request、response 和 filterChain 创建一个 `FilterInvocation` 对象作为 secureObject
 - `Collection<ConfigAttribute>`： `FilterSecurityIntercepter` 使用 `ExpressionBasedFilterInvocationSecurityMetadataSource` 保存这些 `ConfigAttribute`，这些值用来给 `AccessDecisionManager` 提供做判断的信息
 
-`AccessDecisionManager` 自然也不是包含具体的判断逻辑的角色，真正根据上面三个参数来授权的类，其实是 `AccessDecisionVoter`。
+`AccessDecisionManager` 自然也不是包含具体的判断逻辑的角色，真正根据上面三个参数来进行权限验证的类，其实是 `AccessDecisionVoter`。
 
 ==== AccessDecisionVoter
 
 `AccessDecisionVoter` 提供一个 `vote` 方法，接收上面的 `decide` 方法一样的参数。
 
-他的实现包括 `RoleVoter` 和 `AuthenticationVoter`。顾名思义，分别是根据角色和权限信息来判断是否授权的实现。而__什么样的角色/权限可以访问这个对象__则是通过 `ConfigAttribute` 传入的。
+他的实现包括 `RoleVoter` 和 `AuthenticationVoter`。顾名思义，分别是根据角色和权限信息来判断是否通过权限验证的实现。而__什么样的角色/权限可以访问这个对象__则是通过 `ConfigAttribute` 传入的。
 
 不管具体的 Voter 实现如何，最终会返回一个 `int`，只有 -1、0、1 三个值，分别表示拒绝、弃权、同意。
 
-一个 `AccessDecisionManager` 会管理多个 `AccessDecisionVoter`，最终会根据所有 voter 的结果来判断是授权成功，还是抛出 `AccessDeniedException`。
+一个 `AccessDecisionManager` 会管理多个 `AccessDecisionVoter`，最终会根据所有 voter 的结果来判断是验证成功，还是抛出 `AccessDeniedException`。
 
 具体判断的策略则是交给了 `AccessDecisionManager` 的三个实现来决定：
 
@@ -161,17 +161,17 @@ image::access-decision-voting.png[role="center"]
 
 === AbstractSecurityInterceptor
 
-到此，授权用到的核心类基本介绍完了，让我们回过头来想一个问题：`FilterSecurityInterceptor` 明明是一个 `Filter`，为什么要叫做 `Interceptor`？
+到此，权限验证用到的核心类基本介绍完了，让我们回过头来想一个问题：`FilterSecurityInterceptor` 明明是一个 `Filter`，为什么要叫做 `Interceptor`？
 
 如果回顾上面介绍的这些类，你会发现只有 `FilterSecurityInterceptor` 通过实现 `Filter` 接口和 Servlet 绑定了起来，`AccessDecisionManager` 和 `AccessDecisionVoter` 都没有和 Servlet 绑定。
 
-这么做的目的就是为了能支持 Method Security 和 AspectJ Security，这样就能复用真正做授权逻辑的代码。
+这么做的目的就是为了能支持 Method Security 和 AspectJ Security，这样就能复用真正做权限验证逻辑的代码。
 
-我们可以看到 `FilterSecurityInterceptor` 扩展了 `AbstractSecurityInterceptor`。而这个父类的另外两个实现 `MethodSecurityInterceptor` 和 `AspectJMethodSecurityInterceptor` 都是非 Servlet 的实现。由此便做到了对不同的授权方式的支持，并且复用了代码。
+我们可以看到 `FilterSecurityInterceptor` 扩展了 `AbstractSecurityInterceptor`。而这个父类的另外两个实现 `MethodSecurityInterceptor` 和 `AspectJMethodSecurityInterceptor` 都是非 Servlet 的实现。由此便做到了对不同的权限验证方式的支持，并且复用了代码。
 
 ---
 
-关于授权，还有一个很重要的 ACL 没有提到，它并没有影响整个授权的架构，这里就不写了，以后有空再说吧。
+关于权限验证，还有一个很重要的 ACL 没有提到，它并没有影响整个权限验证的架构，这里就不写了，以后有空再说吧。
 
 == 总结
 
@@ -182,7 +182,7 @@ image::access-decision-voting.png[role="center"]
 * 各种 `AbstractAuthenticationProcessingFilter` 过滤请求，交给 `AuthenticationManager` 管理的 `AuthenticationProvider` 尝试不同的身份认证方式
 ** 最终得到一个保存在 `SecurityContextHolder` 中的 `Authentication` 对象
 ** 或者无法确定身份的情况下抛出 `AuthenticationException` 
-* 被 `FilterSecurityInterceptor` 过滤，使用先前创建的 `Authentication` 对象交给 `AccessDecisionManager` 授权
+* 被 `FilterSecurityInterceptor` 过滤，使用先前创建的 `Authentication` 对象交给 `AccessDecisionManager` 进行权限验证
 ** 最终成功调用业务方法
 ** 或者抛出 `AccessDeniedException`
 * 上面抛出的 `AuthenticationException` 和 `AccessDeniedException` 将会被 `ExceptionTranslationFilter` 处理，转化成 401 和 403 的响应。
