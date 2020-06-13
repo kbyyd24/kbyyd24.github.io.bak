@@ -1,0 +1,169 @@
+---
+title: Spring Security 的权限验证
+tags:
+  - Spring
+  - Spring Security
+date: 2020-06-13 16:33:33
+updated: 2020-06-13 16:33:33
+---
+
+
+在前面的文章里，我们对 Spring Security 进行权限验证的组件有了大致的了解，我们首先来回顾并探究一下细节。
+
+image::spring-authorization.png[title="本文涉及到的组件",role="center"]
+
+== FilterSecurityInterceptor
+
+这是 `AbstractSecurityInterceptor` 的一个子类，并且实现了 `Filter` 接口，负责调用父类的 `beforeInvocation()`、`afterInvocatio()` 和 `finallyInvocation()` 方法以及一些 Servlet 相关的工作。
+真正处理权限验证的代码，其实在父类中。
+它存在的意义就是为了能在 `Filter` 中进行权限验证。
+
+这个 `Filter` 默认总是被安排在 `SecurityFilterChain` 的最后，因为需要保证它在所有的身份认证相关的 `Filter` 之后。
+
+=== AbstractSecurityInterceptor
+
+这个类实现了真正的权限验证的逻辑，它有多个子类，是为了适配不同的技术而存在的，比如上面的 `FilterSecurityInterceptor` 就是为了适配 Servlet Filter 而存在的。
+
+我们可以关注一下上面提到的三个方法，这是每个子类都会调用的。
+
+子类的实现总是下面的套路：
+
+[source,java]
+----
+InterceptorStatusToken token = super.beforeInvocation(secureObject); // <1>
+try {
+  // call target method, eg, filterChain.doFilter()
+  // may get a returnedObject
+} final {
+  super.finallyInvocation(token);
+}
+super.afterInvocation(token, returnedObject);
+----
+<1> `secureObject` 是一个方法调用，它的类型是 `Object`，但一般会看到 `MethodInvocation` 或者 `FilterInvocation` 这样的类型。
+
+==== beforeInfocation 方法
+
+这个方法的目标是调用 `AccessDecisionManager.decide()` 方法，完成 pre-invocation handling 操作。
+
+在前面的link:/2020/05/31/spring-security-servlet-overview#_权限验证[概览]中介绍过，`AccessDecisionManager.decide()` 方法有三个参数。其中的 secureObject 已经被子类传进来了。
+那么在真正调用前，就会去获取 `Authentication` 对象和 `Collection<ConfigAttribute>` 集合，然后进行 pre-invocation handling 操作。
+
+> 后面会介绍 `ConfigAttribute`
+
+如果调用时出现 `AccessDecisionException`，那么他将会被 `ExceptionTranslationFilter` 处理。
+
+在通过权限验证之后，就会准备一个 `InterceptorStatusToken` 对象作为返回值。
+
+在创建 token 之前，会尝试使用 `RunAsManager` 创建一个 `Authentication` 对象，如果这个对象不为 `null`，那么就会把它放入一个 `SecurityContext`，替换掉 `SecurityContextHolder` 中原有的那个。
+
+原有的 `SecurityContext` 总是会被放到 token 中。
+
+> 关于 `RunAsManager` ：这里的逻辑是替换掉 `SecurityContextHolder` 中的值，这样在目标方法中看到的 `Authentication` 对象就是这个 `RunAsManager` 创建的对象。在目标方法调用完成后，即 link:#_finallyinfocation_方法[finallyInvocation 方法] 中，会将原来的 `SecurityContext` 重新放回 `SecurityContextHolder` 中。
+>
+> 这样的目的是为了将认证与鉴权流程中的 `Authentication` 对象与业务方法中的区分开来。
+
+在上面的这些步骤中，还会发出一些 `ApplicationEvent`，包括: `PublicInvocationEvent`、`AuthorizationFailureEvent` 和 `AuthorizedEvent`。
+
+> `PublicInvocationEvent` 只在 `Collection<ConfigAttribute>` 为空的时候才会发生，而且这种时候不会调用 `AccessDecisionManager`。
+
+==== afterInfocation 方法
+
+`afterInvocation` 方法主要目的是为了根据 `returnedObject` 进行权限验证，这使用到了 `AfterInvocationManager` 这个接口，这是在link:/2020/05/31/spring-security-servlet-overview#_权限验证[概览]里没有提到的，它被用来进行 after invocation handling。
+
+在这个方法中，如果有必要的话，就会使用 `AfterInvocationManager.decide()` 方法来处理 `returnedObject`，得到一个新的结果作为 `returntedObject`。
+
+> 这里的有必要是指：
+>
+> . token != null
+> . `afterInvocationManager` 字段不为空
+
+==== finallyInfocation 方法
+
+这个方法接收 `InterceptorStatusToken` 作为参数，只做一件事情：将 token 中的 `SecurityContext` 对象放回 `SecurityContextHolder` 中。
+
+这个操作有两个判断条件：
+
+* token 不为 null
+* token 的 `contextHolderRefreshRequired` 为 `true`。当 `SecurityContextHolder` 中的值在 `beforeInvocation` 中被替换时，这个值才为 `true`
+
+---
+
+权限验证的入口 `FilterSecurityInterceptor` 的介绍就到这里，接下来我们来看看 pre-invocation handling 和 after invocation handling 的内容，也就是 `AccessDecisionManager` 与 `AfterInvocationManager`。
+
+== AccessDecisionManager
+
+这是在link:/2020/05/31/spring-security-servlet-overview#_权限验证[概览]中介绍过的内容，这里可以快速的回顾一下。
+
+image::access-decision-voting.png[role="center"]
+
+`AccessDecisionManager` 是 pre-invocation handling 的入口。
+它的三个具体实现会调用多个 `AccessDecisionVoter` 的实现，然后具体实现的策略来决定如何根据 voter 的结果来判断是否通过身份验证。
+每一个 voter 都会根据当前的 `Authentication` 对象、`secureObject` 和 `Collection<ConfigAttribute>` 来做出是否允许访问的选择。
+
+`AccessDecisionManager` 的三个实现，其实就是三种根据 voter 结果来决定最终结果的策略，分别是 `AffirmativeBased`、`ConsensusBased` 和 `UnanimousBased`。策略顾名思义，就不解释了。
+
+## AfterInvocationManager
+
+之前没有讲 after invocation handling 的部分，是觉得不重要，使用场景不多（其实是自己没遇到）。现在想讲一讲，是因为发现 `spring-security-acl` 使用到了 after invocation handling 的机制。那么我们就来看看 `AfterInvocationManager` 是怎么工作的。
+
+> `acl` 的部分涉及一些新的概念，准备单独写一篇。
+
+image::after-invocation.png[role="center"]
+
+通过这个图，我们可以清楚的了解到，`AfterInvocationManager` 也只是一个接口。
+它的实现 `AfterInvocationProviderManager` 则是管理了“很多的” `AfterInvocationProvider` 来真正的执行权限验证的操作。
+
+> 这里“很多的” `AfterInvocationProvider` 其实也就只有四个个实现，其中三个都是 `acl`，包括图里的这两个。
+
+剩下的那个 `PostInvocationAdviceProvider` 其实也没有真正进行 authorization 操作，而是代理给了 `PostInvocationAuthorizationAdvice` 处理。
+而这个 `PostInvocationAuthorizationAdvice` 也只有 `ExpressionBasedPostInvocationAdvice` 这一个实现，也就是基于 `SpEL` 表达式来进行 authorization 的实现。
+
+而上面提到的所有的 manager 和 provider，都提供了 `decide` 方法用来做权限验证。
+与 `AccessDecisionManager.decide()` 相比，这些方法多了一个 `returnedObject` 参数。 
+这既是因为它需要作为判断条件参与到决策过程中，也是因为它可能会在决策过程中被处理，然后返回一个新的 `returnedObject` 作为处理后的结果。
+
+== ConfigAttribute
+
+这个类是用来存储我们的 Security 的配置的。
+
+举个例子，下面的代码就会生成相应的 `ConfigAttribute`：
+
+[source,java]
+----
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+  http.authorizeRequests()
+      .mvcMatchers("hello")
+      .hasAuthority("test")
+      .anyRequest()
+      .authenticated();
+}
+----
+
+上面的代码定义了：
+
+* 访问 `/hello` 的请求需要具有 `test` 权限
+* 其他任意请求，需要通过身份验证（不允许匿名访问）
+
+这样我们就能得到这样的 `ConfigAttribute`：
+
+image::config-attribute.png[role="center"]
+
+这是 `FilterSecurityInterceptor` 的截图。
+其中的 `securityMetadataSource` 存储了很多的 `ConfigAttribute`。
+`AbstractSecurityInterceptor` 通过子类实现的 `obtainSecurityMetadataSource` 方法获取到它，然后通过它获取到本次使用的 `Collection<ConfigAttribute>`。
+
+截图中的 `requestMap` 保存了 `RequestMatcher` 与 `Collection<ConfigAttribute>` 的关系。
+
+当我们请求 `/hello` 时，就会得到第一个 `Collection<ConfigAttribute>`，也就是包含了 `hasAuthority('test')` 的那一个。
+当我们请求其他接口时，就会得到第二个。
+
+接着，这些被获取到的 `ConfigAttribute` 就可以被后续的验证逻辑使用到。
+
+## 总结
+
+本文介绍了 Spring Security Authorization，并着重介绍了 `FilterSecurityInterceptor` 如何在 `SecurityFilterChain` 的最后使用 `AccessDecisionManager` 和 `AfterInvocationManager` 来实现 pre-invocation handling 和 after invocation handling。
+
+对于 `AccessDecisionManager` 和 `AfterInfocationManager`，则没有详细介绍内部的逻辑，而是介绍了它们如何利用子类和其他接口来完成权限验证的。其内部具体的细节逻辑，读者可以自己研究。
+
+> 查看系列文章： link:/spring-security-servlet/[点这里]

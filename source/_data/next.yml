@@ -74,9 +74,11 @@ symbols_count_time:
   total_symbols: true
   total_time: true
 
+# darkmode: true
+
 codeblock:
   border_radius: 4
-  highlight_theme: solarized
+  highlight_theme: galactic
   copy_button:
     enable: true
     show_result: true
