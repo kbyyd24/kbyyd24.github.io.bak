@@ -7,7 +7,10 @@ tags:
   - trap
   - wait
 description: 如何优雅的关闭 Docker container
+date: 2020-06-18 22:46:13
+updated: 2020-06-18 22:46:13
 ---
+
 
 我们平时在使用 `Docker` 的时候，一般会使用 `ctrl+c` 或者 `docker stop` 的方式关闭容器。
 但有时候我们可能会遇到 `ctrl+c` 不生效，或者 `docker stop` 之后要等待 10s 的情况，就像这样：
