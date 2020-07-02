@@ -1,0 +1,250 @@
+---
+title: Spring Security ACL 核心概念和组件
+tags:
+  - spring
+  - spring security
+  - spring security acl
+description: 介绍 Spring Security ACL 中核心的概念和组件
+date: 2020-07-02 01:21:40
+updated: 2020-07-02 01:21:40
+---
+
+
+Spring Security 提供了一个 ACL 模块，也就是 Access Control List，用来做访问控制。
+目的是解决 __**谁**对**什么资源**有**什么权限**__ 的问题。
+这里的重点是具体的资源。
+
+== 面临的问题
+
+我们通过 Spring Security 的 `WebSecurityConfigurerAdapter.configure(HttpSecurity)` 方法，
+对 `HttpSecurity` 对象进行配置，只能精确到 API 层面，决定拥有哪些权限的用户可以访问哪些 API，
+但是对于哪些用户对一个具体的资源有访问权限却无能为力。
+
+举个🌰，对于一个多用户的博客系统，可能存在一个 API `/my/drafts` ，
+可以查看当前用户的草稿，但是不能查看其他用户的草稿。
+那么上面的 `HttpSecurity` 就无法完成这个需求。
+
+为了解决这个问题，我们可能会有很多解决方法：
+
+- 实现一个 `AccessDecisionVoter`，访问数据库中的 `Blog` 记录，然后判断当前的用户是否有权限访问
+- 实现一个 `AccessDecisionVoter`，通过 `Authentication` 对象中的 `GrantedAuthority[]` 判断是否有权限访问
+- 抛弃 Spring Security，自己实现一套权限控制机制
+- 将访问控制的代码和业务代码组织到一起
+
+这些方法也不是不能用，但都有各自的缺陷（Spring Security ACL 也有，只是比这些要好一点）：
+
+- 第一个方案意味着在 `AccessDecisionVoter` 中会进行数据库访问，这会造成性能上的隐患
+- 第二个方案在数据量上升后可能会面临 `Authentication` 对象无比巨大的问题
+- 第三个方案就像自己创造一个加密算法一样，看起来厉害，但可能会有很多漏洞，毕竟没有经过实践检验
+- 第四个方案是最轻量的，但是很容易破坏代码的单一职责原则，最后变成没人愿意维护的代码
+
+== ACL 核心概念
+
+针对上面的缺点，Spring Security ACL 则是采用了面向 Domain Object 的方式，
+抽象出了 Domain Object 这个概念，把 ACL 与业务代码解耦。
+
+我们可以先来看一下 ACL 中的核心概念：
+
+image::acl-cmap.png[]
+
+除了 Domain Object 和 Security Object，其他概念都是 ACL 中的接口。
+这些接口都在 `org.springframework.security.acls.model` package 中。
+
+=== Domain Object
+
+Domain Object 是对业务类实例的抽象，用 `DDD` 的话说，就是对领域模型实例的抽象。
+一个 Domain Object 对应的是一个实例。
+它可能是一篇博客，也可能是一条评论。
+
+一个 Domain Object 被一个 `ObjectIdentity` 唯一标识。
+
+因为有了这个抽象，我们就可以将 ACL 的代码和业务逻辑解耦，仅仅通过 `ObjectIdentity` 来标识 `Acl` 和 Domain Object 的关联关系。
+
+=== Security Object
+
+Security Object 是对用户和角色的抽象。代表了一个用户，或一种角色，或一个权限组等。
+往往是 `Principal` 和 `GrantedAuthority` 的抽象。
+
+=== Acl
+
+`Acl` 类是 ACL 中的核心，也就是 Access Control List 的简称。
+
+一个 `Acl` 实例拥有一个 `ObjectIdentity`，标识了一个 Domain Object。
+
+一个 `Acl` 实例拥有一组 `AccessControlEntity`，顾名思义，它们就是这个访问控制列表中的每一个访问控制项。
+
+一个 `Acl` 实例持有一个 `Sid` 对象，标识了这个 `Acl` 的 owner；owner 对这个 `Acl` 有完全的控制权。
+所谓完全的控制权，也就是指可以修改、删除其中的信息，甚至 `Acl` 本身。
+
+==== MutableAcl
+
+`MutableAcl` 是对 `Acl` 的扩展，提供了一些修改 `Acl` 的方法。
+
+考虑到 `Acl` 可能更多的被使用到一些不会修改访问权限的调用中，所以它只提供了一些只读方法。
+但有一些可能不太频繁的**会修改访问权限**的操作，比如创建、删除等，所以需要一些方法能够修改 `Acl` 实例。
+所以扩展出了 `MutableAcl` 类，用来进行修改访问权限的操作。
+
+=== ObjectIdentity
+
+前面已经提到过 `ObjectIdentity` 的作用，是用来标识 Domain Object，
+就是一个脱离业务上下文后仍然唯一的 id。
+实际上是 ACL 上下文中对 Domain Object 的抽象
+
+能够做到这一点，是因为提供了两个方法：`getType` 和 `getIdentifier`。
+
+`type` 用来标识 Domain Object 的类型，`identifier` 则是在 `type` 上下文中唯一的。
+不同的 `type` 下，可以出现相同的 `identifier`，但 `type` 却需要全局唯一。
+
+默认实现是使用 Domain Object 的 java 类全限定名作为 `type`。
+
+`identifier` 则需要使用者自己实现。
+要求是能根据 Domain Object 找到这个 `identifier`，否则 `Acl` 和 Domain Object 就会失去联系。
+使用 Domain Object 的系统 id 会是一个不错的选择。
+
+=== Sid
+
+`Sid` 是 Security Identity 的简称，是在 ACL 上下文中对 Security Object 的抽象。
+就像 `ObjectIdentity` 对 Domain Object 的抽象一样。
+
+____
+为什么不能统一一下规范，叫 `SecurityIdentity` 呢 🙄️
+____
+
+在实现上，有 `PrincipalSid` 和 `GrantedAuthoritySid`。
+前者是对用户的抽象，后者是对角色、权限的抽象。
+
+=== AccessControlEntry
+
+`AccessControlEntry` 简称 ACE，组成了访问控制列表。
+每一个 ACE 标识了一个 `Sid` 的权限，权限由 `Permission` 表示。
+
+🌰：
+
+如果一种角色对 Domain Object 有可读权限::
+- `Sid` 会是表示这个角色的 `GrantedAuthoritySid`
+- `Permission` 会表示 READ 权限
+
+如果一个用户对 Domain Object 有可读、可写、可邀请协作的权限::
+- 会有多个 ACE
+- 每个 ACE 的 `Sid` 都是指向这个用户的 `PrincipalSid`
+- 每个 ACE 的 `Permission` 会不同，分别表示可读、可写、可邀请协作
+
+=== Permission
+
+`Permission` 接口可能收到了 `Linux` 文件权限的启发，要求使用 32 位二进制数字来表示权限。
+
+所以我们可以针对一个 Domain Object 设计出 2^32^-1 种权限，应该足够使用了。
+
+=== 小结
+
+ACL 的核心就是 `Acl` 类，它将 Domain Object 和 对应的 Security Object 以及权限关联了起来。
+其中，将 Security Object 和权限关联起来的类是 `AccessControlEntry`。
+
+== ACL 权限验证逻辑
+
+通过了解核心概念，我们知道了 ACL 的核心就是 `Acl` 类，那么进行权限验证的逻辑也就很明显了：
+
+. 根据要访问的对象，得到 `ObjectIdentity` 实例
+. 从 `Authentication` 中获取 `Sid`
+. 根据 `ObjectIdentity` 找到对应的 `Acl`
+. 判断 ACE 中是否有进行访问需要的 `Permission`
+
+当上面的这个逻辑验证通过时，才会被允许访问 Domain Object，否则就会出现 `AccessDeniedException`。
+
+=== 获取 ObjectIdentity 对象
+
+我们先来看看第一步，获取 `ObjectIdentity` 对象。
+
+前面介绍 `ObjectIdentity` 的时候推荐过使用 Domain Object 的 class 和系统 id 来作为 `ObjectIdentity`。
+这样的好处就是我们可以根据 Domain Object 实例创建出 `ObjectIdentity` 来。
+
+这个逻辑被抽象成了接口 `ObjectIdentityRetrievalStrategy`。
+它只提供了一个 `getObjectIdentity` 方法：`Object -> ObjectIdentity`。
+
+=== 获取 Sid 对象
+
+因为 `Sid` 代表的是用户和角色，而这些信息被保存在 `Authentication` 对象的 `Principal` 和 `GrantedAuthority[]` 中，
+所以我们可以通过 `Authentication` 对象来获取 `Sid`。
+
+这个逻辑同样被抽象成了接口 `SidRetrivalStrategy`。
+它只提供了一个 `getSids` 方法：`Authentication -> List<Sid>`
+
+=== 获取 Acl 对象
+
+ACL 提供了一个接口 `AclService` 用来获取 `Acl` 对象。
+接口提供了多种方法，其中被这个逻辑使用到的是 `readAclById(ObjectIdentity, List<Sid>)`。
+
+> 其实不提供 `List<Sid>` 也能查到对应的 `Acl`，但其中就会包含当前逻辑中不需要使用到的 ACE。
+
+=== 判断权限
+
+`Acl` 提供了 `isGranted` 方法用来判断当前的 `List<Sid>` 是否有需要的权限。
+
+在默认实现 `AclImpl` 中，判断的逻辑交给了接口 `PermissionGrantingStrategy`，
+这样我们可以通过实现策略而不是 `Acl` 来达到重写验证逻辑的目的。
+
+== ACL 验证逻辑的入口
+
+前面描述的验证逻辑，被实现在了不同的类中。这些类是具体的 security 机制相关的类，每一个类都是针对具体 security 机制的 ACL 验证逻辑的实现。
+
+=== 针对 pre invocation
+
+在link:/2020/05/31/spring-security-servlet-overview/#_accessdecisionvoter[前面的文章]中，
+我们了解过 `AccessDecisionVoter` 是在实际调用发生前进行权限验证的接口。
+
+ACL 中提供了实现 `AclEntryVoter` 来实现验证逻辑。
+
+=== 针对 post invocation
+
+在link:/2020/06/13/spring-security-authorization/#_afterinvocationmanager[前面的另一篇文章]中，
+我们了解过 `AfterInvocationProvider` 是在实际调用发生后进行权限验证的接口。
+
+ACL 中提供了 `AbstractAclProvider` 来实现验证逻辑。
+它的两个子类则是针对不同的使用场景，分别实现权限验证和 collection filter 的逻辑。
+
+=== 针对 expression based access control
+
+对于使用表达式的地方，比如 `@PostAuthority("hasPermission(returnObject, 'READ')")`，
+ACL 提供了 `AclPermissionEvaluator` 实现验证逻辑。
+
+> 这个类实现了 `PermissionEvaluator` 接口。这是 Spring Security 中 `hasPermission` 表达式的解析接口。
+
+---
+
+了解完了这三个入口，我们就知道当需要在某个 security 机制中使用 ACL 时，需要创建出哪一个组件注入到 Spring 容器中。
+
+== 更新 Acl
+
+前面的验证逻辑是使用场景更多的逻辑，也是对 `Acl` 进行只读操作的逻辑。
+更新 `Acl` 并不是一个频繁的操作，但却是一个必要的操作。
+遗憾的是，Spring Security ACL 没有为我们默认实现更新 `Acl` 的逻辑，我们需要自己实现。
+
+好在为了支持更新操作，Spring Security ACL 给我们提供了 `MutableAcl` 和 `MutableAclService` 这两个接口，提供了更新 `Acl` 的方法。
+
+以创建 `Acl` 为例，我们来看看应该写出什么样的代码。（创建 `Acl` 的场景一般是创建了新的资源时）
+
+[source,java]
+----
+public void createAcl(Object domainObject) {
+  ObjectIdentity oid = new ObjectIdentityImpl(domainObject);
+  Sid sid = new PrincipalSid(SecurityContextHolder.getSecurityContext().getAuthentication());
+  Permission p = BasePermission.ADMINISTRATION;
+  MutableAcl acl = aclService.createAcl(oid);
+  acl.insertAce(acl.getEntries().size(), p, sid, true);
+  aclService.updateAcl(acl);
+}
+----
+
+对于更新 ACE、删除 `Acl` 等操作，`MutableAcl` 和 `MutableAclService` 都有相应的方法，只是和创建一样，都需要我们自己写代码调用。
+这些代码应该和业务代码分隔开，这样才能满足 ACL 的初衷，避免写出难以维护的代码。
+
+== 总结
+
+本文介绍了 Spring Security ACL 中的核心概念和它们之间的关系，那张概念图就是最好的总结。
+
+另外还介绍了使用 ACL 进行权限控制的逻辑和相关的组件，也就是那些 strategy 和 service 接口。
+
+最后简单介绍了更新 `Acl` 的方法，更详细的内容会在另外的博客里以 demo 的形式呈现。
+
+
+> 查看系列文章： link:/spring-security-servlet/[点这里]
