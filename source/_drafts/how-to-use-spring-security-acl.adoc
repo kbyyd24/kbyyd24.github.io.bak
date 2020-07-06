@@ -1,0 +1,84 @@
+---
+title: 如何使用 Spring Security ACL
+tags:
+  - spring
+  - spirng security
+  - spring security acl
+  - spring security acl demo
+description: 使用 Spring Security ACL 的例子
+---
+
+在link:/2020/07/02/spring-security-acl-conception-and-component/[上一篇文章]中，我们了解了 Spring Security ACL 的基本概念。
+但是几乎没有涉及实现与使用的部分。这篇文章我们就来看一看如何在使用了 Spring 的项目中使用 Spring Security。
+
+== 导入 Jar 包
+
+Spring Security ACL 的 GAV 是 `org.springframework.security:spring-security-acl:<version>`，
+被加入到了 link:https://docs.spring.io/platform/docs/1.0.1.RELEASE/reference/htmlsingle/#appendix-dependency-versions[Spring IO Platform bom] 中，所以可以使用 Spring 的依赖管理插件来管理版本号。
+
+但是 Spring 没有提供相应的 boot starter，使用的时候需要自己进行配置。
+毕竟 ACL 中提供的默认实现很可能达不到需求，还不如自己动手。
+
+== 存储 ACL
+
+ACL 需要被持久化起来，否则系统重启后就丢掉了权限信息。
+
+=== 基于 JDBC 的持久化
+
+Spring Security ACL 提供了默认的 `AclService` 和 `MutableAclService` 实现：`JdbcAclService` 和 `JdbcMutableAclService`。
+
+因为是基于 `JDBC` 的实现，所以就可能存在性能问题（绝大多数情况下不需要更新 ACL，但使用 JDBC 时总是会访问数据库，得到一模一样的 ACL）。
+于是 ACL 又设计了一个缓存机制来减少对数据库的请求。缓存的接口是 `AclCache`，Spring 提供了基于 Eh-Cache 和 Spring Cache 的两个实现。
+
+> `AclCache` 接口被安排在了 `org.springframework.security.acls.model` 包中。
+> 个人觉得这不是一个必须的元素，算不上核心概念，不应该和其他核心概念放到一起。
+
+==== 创建数据库
+
+`JdbcAclService` 需要创建四张表，创建表的 SQL 已经在 jar 包里了（但是有坑），我们只是来看看这几张表分别保存了什么内容。
+
+acl_sid::
+- id: 主键
+- principal: 一个布尔值，表示这个 sid 是不是 `PrincipalSid`，如果值为 `false` 则表示 sid 是 `GrantedAuthoritySid`
++
+____
+这个设计简直把扩展堵死了 🙄️
+____
+- sid: `Sid` 实例中保存的字符串，也就是 `Principal.getName()` 或 `GrantedAuthority.getAuthority()` 或自己写代码生成的字符串
+
+acl_class::
+- id: 主键
+- class: Domain Object 类型的全限定名
++
+`ObjectIdentity` 的默认实现使用 全限定名+id 的方式确定一个 Domain Object
+- class_id_type: 可选字段，保存`ObjectIdentity` 中 `identifier` 的类型，默认是 `Long`
++
+这就是坑的所在。Jar 包中给出的 SQL 有不同的数据库的版本，只有 `PostgreSql` 和 `HSQL` 的版本中有这个字段。
+如果不创建这个字段，那么 `ObjectIdentity` 就只能支持 `Long` 类型的 id。
+`JdbcService` 默认也不会查询这个字段，需要特别配置。
+
+acl_object_identity::
+- id: 主键
+- object_id_class: 外键依赖 `acl_class.id`
+- object_id_identity: `ObjectIdentity.getIdentifer()` 的值，与 `object_id_class` 组成唯一键
+- parent_object: 外键依赖 `acl_object_identity.id`，在 `Acl` 继承时使用
+- owner_sid: 外键依赖 `acl_sid.id`，是 `Acl` 实例的 owner，拥有修改 `Acl` 的权限
+- entries_inheriting: 布尔值，表示 child acl 是否要继承 parent acl 的 ACE
+
+这张表里保存的都是 `Acl` 持有的信息，也就是说，这张表的一行记录对应了一个 `Acl` 实例。
+
+acl_entry::
+- id: 主键
+- acl_object_identity: 外键依赖 `acl_object_identity.id`，表示属于哪一个 `Acl`
+- ace_order: 表示这一条 ACE 在 `Acl` 中的顺序，和 `acl_object_identity` 组成唯一键
+- sid: 外键依赖 `acl_sid.id`，表示这条 ACE 的权限对应哪一个 `Sid`
+- mask: 表示权限的 32 位二进制数字
+- granting: 布尔值，表示这条 ACE 是否生效
+- audit_success
+- audit_failure: 这两条是用于审计的信息，对应了 `AuditableAccessControlEntry` 接口，本文不会涉及
+
+这张表保存的是 ACE 的信息，一行记录对应了一个 ACE 实例。
+
+==== 配置 JdbcAclService
+
+在动手之前，我们先来看看 `JdbcAclService` 都有什么依赖：
