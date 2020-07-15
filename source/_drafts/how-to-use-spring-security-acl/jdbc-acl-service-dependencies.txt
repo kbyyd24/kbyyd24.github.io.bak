@@ -1,0 +1,69 @@
+@startuml
+
+interface DataSource
+
+interface LookupStrategy
+
+interface AclCache
+
+interface AclAuthorizationStrategy
+
+interface PermissionGrantingStrategy
+
+interface AuditLogger
+
+interface Ehcache
+
+interface Cache
+
+JdbcAclService ..> DataSource
+
+JdbcAclService ..> LookupStrategy
+
+JdbcAclService <|-- JdbcMutableAclService
+
+JdbcMutableAclService ..> DataSource
+
+JdbcMutableAclService ..> AclCache
+
+JdbcMutableAclService ..> LookupStrategy
+
+LookupStrategy <|.. BasicLookupStratege
+
+DataSource <.. BasicLookupStratege
+
+AclCache <.. BasicLookupStratege
+
+BasicLookupStratege ..> AclAuthorizationStrategy
+
+BasicLookupStratege ..> PermissionGrantingStrategy
+
+AclAuthorizationStrategy <|.. AclAuthorizationStrategyImpl
+
+AclAuthorizationStrategyImpl <--* GrantedAuthority
+
+PermissionGrantingStrategy <|.. DefaultPermissionGrantingStrategy
+
+DefaultPermissionGrantingStrategy <--* AuditLogger
+
+AuditLogger <|.. ConsoleAuditLogger
+
+AclCache <|.. EhCacheBasedAclCache
+
+EhCacheBasedAclCache ..> Ehcache
+
+EhCacheBasedAclCache ..> PermissionGrantingStrategy
+
+EhCacheBasedAclCache ..> AclAuthorizationStrategy
+
+AclCache <|.. SpringCacheBasedAclCache
+
+SpringCacheBasedAclCache ..> Cache
+
+Cache <|.. NoOpCache
+
+SpringCacheBasedAclCache ..> PermissionGrantingStrategy
+
+SpringCacheBasedAclCache ..> AclAuthorizationStrategy
+
+@enduml
