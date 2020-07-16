@@ -187,6 +187,124 @@ public Cache cache() {
 
 === 创建 ACL
 
+创建 ACL 发生在创建 Domain Object 的时候。我们可以编写代码创建 `Acl` 对象：
+
+[source,java]
+----
+public void onCreate(Class<?> domainClass, String id, Authentication authentication) {
+  ObjectIdentity objectIdentity = new ObjectIdentityImpl(domainClass, id);
+  PrincipalSid sid = new PrincipalSid(authentication);
+  MutableAcl acl = findOrCreate(objectIdentity);
+  acl.insertAce(acl.getEntries().size(), BasePermission.ADMINISTRATION, sid, true);
+  // ... <1>
+  mutableAclService.updateAcl(acl);
+}
+
+private MutableAcl findOrCreate(ObjectIdentity objectIdentity) {
+  try {
+    return (MutableAcl) mutableAclService.readAclById(objectIdentity); <2>
+  } catch (NotFoundException e) {
+    return mutableAclService.createAcl(objectIdentity);
+  }
+}
+----
+<1> 这里可以向 `Acl` 中插入任意需要的 ACE
+<2> 这里的强制转换能工作是因为 `AclImpl` 是 `Acl` 和 `MutableAcl` 的共有且唯一的实现
+
+我们来梳理一下这段代码的逻辑：
+
+. 根据 domainClass 和 id 创建 `ObjectIdentity`，它可以用来标识一个 domain object
+. 根据当前的 `Authentication` 创建一个 `PrincipalSid`，它后续会被用作 ACE 的 sid
+. 根据 `ObjectIdentity` 对象查找或创建 `Acl` 对象
++
+创建时会使用当前的 `Authentication` 新建一个 `PrincipalSid` 对象，和这里的不是同一个对象
+. 向 `Acl` 中插入 ACE
++
+这里可添加当前用户的 ACE，也可以添加某种 `GrantedAuthority` 的权限
+. 保存 `Acl`
+
+接着我们来看一下添加 ACE 的细节，也就是 `Acl.insertAce()` 方法。
+
+==== insertAce
+
+这个方法的作用是向 `Acl` 实例的 `List<AccessControlEntry>` 中插入 ACE 实例。
+
+第一个参数指定了这个 ACE 在列表中的索引值。
+
+第二个参数指定这个 ACE 的权限是什么。这里我们使用了 `BasePermission` 这个实现提供的值。
+但无论如何，`Permission` 接口的 `getMask()` 方法一定返回的是一个 32 位的二进制数字。（类型是 int，但取值范围是 0~2^32^-1，这也就是所能设计的权限的个数。）
+
+第三个参数是一个 `Sid`，表示这个 `Sid` 拥有对应的权限。
+
+第四个参数是 granting，代表这条 ACE 是否生效，作用类似于 enable。
+
+调用了这个方法之后，一个新的 ACE 就被加入到 `Acl` 中了。接下来的权限判断就可以使用到这个新的 ACE。
+
 === 更新 ACL
 
+更新 ACL 可能更多的出现在协作软件中，比如邀请他人一起编写文档等操作。
+
+==== 添加新的 ACE
+
+我们就以邀请协作作为例子，看看如何添加 ACE：
+
+[source,java]
+----
+public void onInvite(Class<?> domainClass, String id, String invitedUserPrincipalName) {
+  ObjectIdentity objectIdentity = new ObjectIdentityImpl(domainClass, id);
+  PrincipalSid sid = new PrincipalSid(invitedUserPrincipalName); <1>
+  MutableAcl acl = findAcl(objectIdentity);
+  acl.insertAce(acl.getEntries().size(), BasePermission.WRITE, sid, true);
+  mutableAclService.updateAcl(acl);
+}
+
+private MutableAcl findAcl(ObjectIdentity objectIdentity) {
+  return (MutableAcl) mutableAclService.readAclById(objectIdentity);
+}
+----
+<1> `PrincipalSid` 其实保存的是 `Authentication.getName()` 的返回值，本质上就是 principal name，所以可以直接使用一个字符串作为 principal name。
+
+这里，我们给了一个具体的被邀请者一个 WRITE 权限。我们甚至可以给一组用户权限，只需要提供不同的 `Sid`。
+
+[source,java]
+----
+GrantedAuthoritySid sid = new GrantedAuthoritySid("teamA");
+----
+
+==== 更新已有的 ACE
+
+还是前面的例子，假设某个协作者完成了自己的工作，不想误操作导致修改，希望将权限修改为只读。
+那么这个时候就会使用到 `MutableAcl.updateAce()` 方法。
+
+这个方法只有两个参数，第一个是要修改的 ACE 的索引，第二个是需要修改成的权限，那么我们的代码可能写出来是这个样子：
+
+[source,java]
+----
+List<AccessControlEntry> aces = acl.getEntries();
+aces.stream()
+  .filter(ace -> ace.getSid().equals(sid))
+  .mapToInt(aces::indexOf)
+  .forEach(idx -> acl.updateAce(idx, permission));
+----
+
+这样我们就能将任何匹配到 `Sid` 的 ACE 的权限修改为指定的 `Permission`。
+
+==== 删除已有的 ACE
+
+还是前面的例子，假设我们协作完成了，需要关闭其他人的权限，那么我们就需要删除对应的 ACE。
+
+> 个人更倾向于软删除，也就是将 ACE 的 `granting` 字段设置为 `false`。但是 Spring ACL 在模型设计上没有提供修改的方法，具体实现上，这个字段也被标记为 `final`。
+
+删除 ACE 同样需要它的索引：
+
+[source,java]
+----
+List<AccessControlEntry> aces = acl.getEntries();
+aces.stream()
+  .filter(ace -> ace.getSid().equals(sid))
+  .mapToInt(aces::indexOf)
+  .forEach(acl::deleteAce);
+----
+
 === 删除 ACL
+
