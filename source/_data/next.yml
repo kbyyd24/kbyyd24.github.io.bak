@@ -79,7 +79,8 @@ symbols_count_time:
 
 codeblock:
   border_radius: 4
-  highlight_theme: galactic
+  # Available values: normal | night | night eighties | night blue | night bright | solarized | solarized dark | galactic
+  highlight_theme: solarized dark
   copy_button:
     enable: true
     show_result: true

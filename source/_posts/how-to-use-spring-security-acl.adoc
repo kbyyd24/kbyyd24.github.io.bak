@@ -6,7 +6,10 @@ tags:
   - spring security acl
   - spring security acl demo
 description: 使用 Spring Security ACL 的例子
+date: 2020-07-18 12:17:26
+updated: 2020-07-18 12:17:26
 ---
+
 
 在link:/2020/07/02/spring-security-acl-conception-and-component/[上一篇文章]中，我们了解了 Spring Security ACL 的基本概念。
 但是几乎没有涉及实现与使用的部分。这篇文章我们就来看一看如何在使用了 Spring 的项目中使用 Spring Security。
@@ -51,7 +54,7 @@ acl_class::
 - class: Domain Object 类型的全限定名
 +
 `ObjectIdentity` 的默认实现使用 全限定名+id 的方式确定一个 Domain Object
-- class_id_type: 可选字段，保存`ObjectIdentity` 中 `identifier` 的类型，默认是 `Long`
+- class_id_type: 可选字段，保存 `ObjectIdentity` 中 `identifier` 的类型，默认是 `Long`
 +
 *这就是坑的所在*。Jar 包中给出的 SQL 有不同的数据库的版本，只有 `PostgreSql` 和 `HSQL` 的版本中有这个字段。
 如果不创建这个字段，那么 `ObjectIdentity` 就只能支持 `Long` 类型的 id。
@@ -121,7 +124,7 @@ public LookupStrategy lookupStrategy() {
   return basicLookupStrategy;
 }
 ----
-<1> `BasicLookupStrategy` 也会自己组装 sql，通用需要调用这个方法以支持 `acl_class.class_id_type`。
+<1> `BasicLookupStrategy` 也会自己组装 sql，需要调用这个方法以支持 `acl_class.class_id_type`。
 
 接着，我们先来看一下 `AclAuthorizationStrategy` 和 `PermissionGratingStrategy` 这两个简单一点的依赖。
 
@@ -209,7 +212,7 @@ private MutableAcl findOrCreate(ObjectIdentity objectIdentity) {
 }
 ----
 <1> 这里可以向 `Acl` 中插入任意需要的 ACE
-<2> 这里的强制转换能工作是因为 `AclImpl` 是 `Acl` 和 `MutableAcl` 的共有且唯一的实现
+<2> 这里的强制转换不会出错是因为 `AclImpl` 是 `Acl` 和 `MutableAcl` 的共有且唯一的实现
 
 我们来梳理一下这段代码的逻辑：
 
@@ -307,4 +310,95 @@ aces.stream()
 ----
 
 === 删除 ACL
+
+一个 ACL 关联到一个 domain object，当一个 domain object 被删除时，ACL 也应该被删除。
+
+`MutaleAclService` 也定义了 `deleteAcl` 方法用来删除 ACL，它被 `JdbcMutableAclService` 实现。
+
+[source,java]
+----
+mutableAclService.deleteAcl(acl, true);
+----
+
+其中的第二个参数表示是否要删除子 Acl。（因为 ACL 可以继承）
+
+> 在具体的实现中，默认的 sql 会删除整个 ACL。所以如果想要实现软删除，那么不仅需要调用对应的 setter 方法来修改对应的 sql，还需要修改表结构来支持软删除。
+
+== 使用 ACL 保护业务调用
+
+现在我们知道了如何操作 ACL，那么接下来看看如果使用 ACL 来判断请求是否有权限调用业务方法。
+
+在link:/2020/07/02/spring-security-acl-conception-and-component/#_acl_验证逻辑的入口[上一篇文章]中，我们介绍过 Spring ACL 提供的三种使用 ACL 的机制，接下来我们以 expression based access control 作为例子，看看如何使用 ACL 保护业务方法。
+
+在这个例子中，我们使用 `PostAuthorize` 来保护业务方法：
+
+[source,java]
+----
+@PostAuthorize("hasPermission(returnObject, 'READ')")
+public DomainObject find(String id) {
+  //...
+  return domainObject;
+}
+----
+
+这个例子中，业务方法返回的 domainObject 会被作为表达式中的 returnObject 传递给 `hasPermission` 方法，验证当前用户是否有指定的 READ 权限。
+
+这里的 `hasPermission` 方法会调用到 `SecurityExpressionRoot`，最终到达 `AclPermissionEvaluator.hasPermission()` 方法。
+
+在这个方法中，returnObject 会被交给 `ObjectIdnetityRetrievalStrategy` 接口，得到 `ObjectIdentity`，用来查找对应的 `Acl` 实例。
+
+> 具体实现上，其实是通过反射得到 className 和 `getId()` 方法，然后调用这个方法得到 identity。所以这里的 returnObject 一定要有 `getId()` 方法。
+
+我们传递的 `'READ'` 参数，就是 permission，但这里被当作了 `Object`。`AclPermissionEvaluator` 通过自己实现的 `resolvePermission()` 方法来处理不同类型的参数。
+我们的 `'READ'` 会被当做字符串处理，交给 `PermissionFactory` 的默认实现处理。
+默认实现中提供了两个 `Map`，分别保存了 `permission name -> BasePermission` 和 `mask int -> BasePermission` 的映射关系。
+我们的 `'READ'` 也就这样被映射到了 `BasePermission.READ`。
+
+=== 启用 Method Security
+
+解释完了上面的方法，接下来就是要让这个表达式生效了。
+
+Spring Security 默认没用启用 Method Security，而 `PostAuthorize` 则需要这个支持。
+
+要启用这个功能很简单，我们只需要：
+
+. enable pre/post security
+. 创建 `AclPermissionEvaluator`
+. 创建 `MethodSecurityExpressionHanler`，并将 `AclPermissionEvaluator` 设置为它的 `PermissionEvaluator`
+
+[source,java]
+----
+@Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class MethodSecurityConfig {
+  @Autowired private AclService aclService;
+
+  @Bean
+  public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
+    MethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+    handler.setPermissionEvaluator(new AclPermissionEvaluator(aclService)); <1>
+    return handler;
+  }
+}
+----
+<1> 我们可以给它提供一个 `AclSerivce` 而不是 `MutableAclService`，因为它不会修改 ACL
+
+这样我们的表达式就能生效了，当一个没有 READ 权限的用户尝试访问 domain object 的时候，就会得到一个 403 响应。
+
+____
+这里就不再讲使用 `AclEntryVoter` 和 after invocation 的例子了，无论使用哪种方式，都需要自己进行相应的配置。读者如果感兴趣可以自己研究研究。
+____
+
+== 总结
+
+这篇文章从代码的角度简单研究了如何使用 ACL。
+
+相信你也看出来了，没有 Spring Boot auto configure 的支持，使用 ACL 需要些大量的配置代码。
+这还不止。在研究源码时，发现 ACL 的实现其实比较简单，覆盖的场景看起来特别单一。
+如果实际项目想要使用，应该需要花一些工作来提供项目和适配的实现。
+
+> 举个例子，`AclEntryVoter` 的实现中，要求 `MethodInvocation` 的餐宿中一定要有 domain object，这一点可能就和一些项目的实践相违背。
+
+尽管如此，我仍然认为 ACL 是一种不错的设计，很好的分离了业务和访问控制的关注点，抽象的接口也可以方便的进行扩展，值得去试一试。
+
 
