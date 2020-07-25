@@ -116,7 +116,7 @@ number-of-renews-per-min-threshold > 0
 
 根据名字，这个值代表的是期望的会发送心跳请求的 client 数量，也就是前面的 `client-size`。但是实际上的值却有可能不同。
 
-这个值的一个更新时间时启动 eureka server 时。Eureka server 会尝试从配置的邻居 server 节点拉取注册表信息来配置。如果没有邻居节点，或者注册表中没有信息的话，就会被设置为默认值 1，通过 `eureka.server.defaultOpenForTrafficCount` 配置。
+这个值的一个更新时间是启动 eureka server 时。Eureka server 会尝试从配置的邻居 server 节点拉取注册表信息来配置。如果没有邻居节点，或者注册表中没有信息的话，就会被设置为默认值 1，通过 `eureka.server.defaultOpenForTrafficCount` 配置。
 
 > 不是很明白为什么要设置默认值为 1。不过相关代码中，在注册与注销时，都只有在这个值大于 0 时才会更新。
 
