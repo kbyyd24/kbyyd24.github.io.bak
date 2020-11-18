@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在学习 Spring Cloud 的时候，文档一开始就提到了一个概念：Twelve-Factor App。这勾起了我的好奇心，刚好有个网站用来解释这个东西，这里谈谈我的理解。 https:&#x2F;&#x2F;12factor.net">
+<meta property="og:type" content="article">
+<meta property="og:title" content="什么是 Twelve-Factor App">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="在学习 Spring Cloud 的时候，文档一开始就提到了一个概念：Twelve-Factor App。这勾起了我的好奇心，刚好有个网站用来解释这个东西，这里谈谈我的理解。 https:&#x2F;&#x2F;12factor.net">
+<meta property="article:published_time" content="2018-09-27T01:14:37.000Z">
+<meta property="article:modified_time" content="2018-09-27T01:14:37.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Cloud Native">
+<meta property="article:tag" content="12 factor">
+<meta property="article:tag" content="Twelve-Factor">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>什么是 Twelve-Factor App | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          什么是 Twelve-Factor App
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-09-27 01:14:37" itemprop="dateCreated datePublished" datetime="2018-09-27T01:14:37+00:00">2018-09-27</time>
+            </span>
+
+          
+            <span id="/2018/09/27/what-is-12-factors-app/" class="post-meta-item leancloud_visitors" data-flag-title="什么是 Twelve-Factor App" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2018/09/27/what-is-12-factors-app/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/09/27/what-is-12-factors-app/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2018/09/27/what-is-12-factors-app/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2018/09/27/what-is-12-factors-app/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div class="paragraph">
+<p>在学习 <code>Spring Cloud</code> 的时候，文档一开始就提到了一个概念：Twelve-Factor App。这勾起了我的好奇心，刚好有个网站用来解释这个东西，这里谈谈我的理解。 <a href="https://12factor.net" target="_blank" rel="noopener" class="bare">https://12factor.net</a></p>
+</div>
+<div class="sect1">
+<h2 id="_什么是_twelve_factor_app">什么是 Twelve-Factor App</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>首先，twelve-factor app 是由 <code>Heroku</code> 提出的一种用于构建 <code>software-as-a-service</code> (SaaS) 应用的方法论。但不是所有的 <code>SaaS</code> 应用都是 twelve-factor app，只有符合一些特征，才是一个 twelve-factor app。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use <strong>declarative</strong> formats for setup automation, to minimize time and cost for new developers joining the project;</p>
+<div class="paragraph">
+<p>通过声明的方式来自动化配置，以达到最小化项目新成员的时间成本和学习成本。这一点很好理解。</p>
+</div>
+</li>
+<li>
+<p>Have a <strong>clean contract</strong> with the underlying operating system, offering <strong>maximum portability</strong> between execution environments;</p>
+<div class="paragraph">
+<p>和底层系统之间有明确的契约，这样就能提供最大的可移植性。</p>
+</div>
+<div class="paragraph">
+<p>类似于我们现在推崇的使用 <code>docker</code> 来输出我们的软件，这样我们只需要 <code>docker</code> 的环境就能运行我们的软件；而不是提供一个 <code>jar</code> 包或者前端打包的压缩文件，需要我们自行安装 <code>java</code> 或者 <code>nginx</code> 才能运行。</p>
+</div>
+</li>
+<li>
+<p>Are suitable for <strong>deployment</strong> on modern <strong>cloud platforms</strong>, obviating the need for servers and systems administration;</p>
+<div class="paragraph">
+<p>适用于部署到现代云计算平台，从而避免对服务器或系统管理员的需求。</p>
+</div>
+<div class="paragraph">
+<p>其实，这样的要求就是在减小移植的成本。</p>
+</div>
+</li>
+<li>
+<p><strong>Minimize divergence</strong> between development and production, enabling <strong>continuous deployment</strong> for maximum agility;</p>
+<div class="paragraph">
+<p>最小化开发环境和生产环境的差异，并启用持续部署来最大化敏捷实践。</p>
+</div>
+<div class="paragraph">
+<p>减少开发环境和生产环境的差异，有利于我们提早发现问题和排查问题。持续部署作为一种敏捷实践，应该大力推行。</p>
+</div>
+</li>
+<li>
+<p>And can <strong>scale up</strong> without significant changes to tooling, architecture, or development practices.</p>
+<div class="paragraph">
+<p>可以在不对使用的工具、基础设施和开发实践进行重大改动的情况下进行“放大”。</p>
+</div>
+<div class="paragraph">
+<p>这里的“放大”，可以指部署上的水平扩容或者功能上的改进等等。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_为什么需要_twelve_factor_app">为什么需要 Twelve-Factor App</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在面对现代软件开发过程中，我们会遇到很多系统性的问题。<code>Heroku</code> 提出 Twelve-Factor App 的初衷，是为了增强我们对这些问题的认知，并提供专用的名次来命名这些问题，同时提出针对这些问题的广义上的解决方案。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>这里的 <code>广义上的</code> ，原文用词 <code>conceptual</code> ，可以理解为是抽象的解决方案，而不是具体的解决方案。</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>这些问题和解决方案，也不是随便找了一些人来闭门造车想出来的，而是邀请了直接或间接参与了大量应用的开发、部署、运维以及扩展的拥有丰富经验的 IT 从业人员参与讨论，得出了这些系统性的问题和对应的解决方案。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_twelve_factor_是哪十二个">Twelve-Factor 是哪十二个</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Twelve-Factor App 提出了十二个方面的解决方案，这也是它的名字的由来。而每一点，官网都提供了一句话的总结和详细的描述。这里暂时简单记录一下。</p>
+</div>
+<div class="sect2">
+<h3 id="_1_codebase">1.Codebase</h3>
+<div class="paragraph">
+<p>一句话总结：一份基准代码，多次部署。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/codebase" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/codebase" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_dependencies">2.Dependencies</h3>
+<div class="paragraph">
+<p>一句话总结：显式的声明依赖。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/dependencies" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/dependencies" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_config">3.Config</h3>
+<div class="paragraph">
+<p>一句话总结：在部署的环境中存储配置。</p>
+</div>
+<div class="paragraph">
+<p>这里说的配置，是指在各个部署环境中不同的值。如果某个配置在不同的环境中是相同的，那么它就不应该是一个配置。所以，这里的配置一定会针对到具体的环境中，我们应该将它们与环境绑定起来。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/config" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/config" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_backing_services">4.Backing services</h3>
+<div class="paragraph">
+<p>一句话总结：将后端服务当作附加资源。</p>
+</div>
+<div class="paragraph">
+<p>后端服务，不是平时所理解的 Web 应用的服务器那个后端，而是应用所调用到的其他服务，比如数据库、对象存储等等。当作附加资源，要求我们可以在不修改代码的情况下，可以切换所依赖的这些资源。比如，通过修改数据库的 URL、用户名等，切换到其他的数据库服务。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/backing-services" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/backing-services" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_build_release_run">5.Build, release run</h3>
+<div class="paragraph">
+<p>一句话总结：严格分离构建、发布和运行的阶段。</p>
+</div>
+<div class="paragraph">
+<p>由于每一个阶段对系统健壮性、信息完整度的要求并不一致，对不同的阶段采取不同的措施是很有必要的。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/build-release-run" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/build-release-run" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_6_processes">6.Processes</h3>
+<div class="paragraph">
+<p>一句话总结：以一个或多个无状态进程运行应用。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/processes" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/processes" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_7_port_binding">7.Port binding</h3>
+<div class="paragraph">
+<p>一句话总结：通过绑定端口来提供服务。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/port-binding" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/port-binding" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_8_concurrency">8.Concurrency</h3>
+<div class="paragraph">
+<p>一句话总结：通过进程模型来进行扩展。</p>
+</div>
+<div class="paragraph">
+<p>在 twelve-factor app 中，进程是一等公民。Twelve-factor app 借鉴 <a href="https://adam.herokuapp.com/past/2011/5/9/applying_the_unix_process_model_to_web_apps/" target="_blank" rel="noopener">unix 守护进程模型</a> 来设计应用架构，将不同的工作分配给不同的进程类型来处理。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/concurrency" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/concurrency" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_9_disposability">9.Disposability</h3>
+<div class="paragraph">
+<p>一句话总结：快速和优雅的启动、终止进程，可最大化健壮性。</p>
+</div>
+<div class="paragraph">
+<p>易处理的进程，意味着进程可以瞬间完成启动和终止。这样有利于快速的对应用进行伸缩、部署新的代码或配置。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/disposability" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/disposability" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_10_devprod_parity">10.Dev/prod parity</h3>
+<div class="paragraph">
+<p>一句话总结：尽可能的保持 Dev、staging 和 production 环境一致。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/dev-prod-parity" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/dev-prod-parity" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_11_logs">11.Logs</h3>
+<div class="paragraph">
+<p>一句话总结：像对待事件流一样对待日志。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/logs" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/logs" target="_blank" rel="noopener">中文</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_12_admin_processes">12.Admin processes</h3>
+<div class="paragraph">
+<p>一句话总结：后台管理任务当作一次性进程运行。</p>
+</div>
+<div class="paragraph">
+<p><a href="https://12factor.net/admin-processes" target="_blank" rel="noopener">英文</a> <a href="https://www.12factor.net/zh_cn/admin-processes" target="_blank" rel="noopener">中文</a></p>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_总结">总结</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>可以将 Twelve-Factor App 理解为一种构建 cloud native 应用的指导原则（方法论），按照这样的原则设计并开发出来的应用，将会十分适用于部署到类似于 <code>Heroku</code> 这样的服务中。</p>
+</div>
+</div>
+</div>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/" title="什么是 Twelve-Factor App">https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Cloud-Native/" rel="tag"><i class="fa fa-tag"></i> Cloud Native</a>
+              <a href="/tags/12-factor/" rel="tag"><i class="fa fa-tag"></i> 12 factor</a>
+              <a href="/tags/Twelve-Factor/" rel="tag"><i class="fa fa-tag"></i> Twelve-Factor</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/08/21/create-your-own-spring-auto-configuration/" rel="prev" title="创建自己的 Spring auto-configuration">
+      <i class="fa fa-chevron-left"></i> 创建自己的 Spring auto-configuration
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/12/20/Use-Git-Submodule-to-Manage-Your-Hexo-Theme/" rel="next" title="使用 git submodule 管理 Hexo 博客的主题">
+      使用 git submodule 管理 Hexo 博客的主题 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#_什么是_twelve_factor_app"><span class="nav-number">1.</span> <span class="nav-text">什么是 Twelve-Factor App</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_为什么需要_twelve_factor_app"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 Twelve-Factor App</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_twelve_factor_是哪十二个"><span class="nav-number">3.</span> <span class="nav-text">Twelve-Factor 是哪十二个</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_1_codebase"><span class="nav-number">3.1.</span> <span class="nav-text">1.Codebase</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_2_dependencies"><span class="nav-number">3.2.</span> <span class="nav-text">2.Dependencies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_3_config"><span class="nav-number">3.3.</span> <span class="nav-text">3.Config</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_4_backing_services"><span class="nav-number">3.4.</span> <span class="nav-text">4.Backing services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_5_build_release_run"><span class="nav-number">3.5.</span> <span class="nav-text">5.Build, release run</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_6_processes"><span class="nav-number">3.6.</span> <span class="nav-text">6.Processes</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_7_port_binding"><span class="nav-number">3.7.</span> <span class="nav-text">7.Port binding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_8_concurrency"><span class="nav-number">3.8.</span> <span class="nav-text">8.Concurrency</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_9_disposability"><span class="nav-number">3.9.</span> <span class="nav-text">9.Disposability</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_10_devprod_parity"><span class="nav-number">3.10.</span> <span class="nav-text">10.Dev&#x2F;prod parity</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_11_logs"><span class="nav-number">3.11.</span> <span class="nav-text">11.Logs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_12_admin_processes"><span class="nav-number">3.12.</span> <span class="nav-text">12.Admin processes</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2018/09/27/what-is-12-factors-app/";
+    this.page.identifier = "2018/09/27/what-is-12-factors-app/";
+    this.page.title = "什么是 Twelve-Factor App";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

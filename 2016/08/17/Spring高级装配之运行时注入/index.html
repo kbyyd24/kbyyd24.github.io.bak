@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="{:toc #zhuru}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring高级装配之运行时注入">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="{:toc #zhuru}">
+<meta property="article:published_time" content="2016-08-17T00:00:00.000Z">
+<meta property="article:modified_time" content="2016-08-17T00:00:00.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Blog">
+<meta property="article:tag" content=" 博客">
+<meta property="article:tag" content=" Yuexiang">
+<meta property="article:tag" content=" yuexiang">
+<meta property="article:tag" content=" 悦翔">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>Spring高级装配之运行时注入 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          Spring高级装配之运行时注入
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-17 00:00:00" itemprop="dateCreated datePublished" datetime="2016-08-17T00:00:00+00:00">2016-08-17</time>
+            </span>
+
+          
+            <span id="/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/" class="post-meta-item leancloud_visitors" data-flag-title="Spring高级装配之运行时注入" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/08/17/Spring高级装配之运行时注入/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>{:toc #zhuru}</li>
+</ul>
+<p>运行时注入与硬编码注入是相对的。硬编码注入在编译时就已经确定了，运行时注入则可能需要一些外部的参数来解决。</p>
+<p><code>Spring</code>提供的两种在运行时求值的方式：</p>
+<ul>
+<li>属性占位符(Property placeholder)</li>
+<li><code>Spring</code>表达式语言(SpEL)</li>
+</ul>
+<h2 id="注入外部的值"><a href="#注入外部的值" class="headerlink" title="注入外部的值"></a>注入外部的值</h2><p>使用<code>@PropertySource</code>注解可以引入<code>.properties</code>文件，使用其中的值。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@PropertySource</span>(<span class="string">"classpath:jdbc.properties"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">JDBCConfig</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    Environment env;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> DataSource <span class="title">dataSource</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        env.getProperties(<span class="string">"driver"</span>);</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="深入了解Spring中的Environment"><a href="#深入了解Spring中的Environment" class="headerlink" title="深入了解Spring中的Environment"></a>深入了解<code>Spring</code>中的<code>Environment</code></h3><p>上例的<code>Environment</code>有如下方法获取属性</p>
+<ul>
+<li>String getProperty(String key);</li>
+<li>String getProperty(String key, String defaultValue);</li>
+<li>T getProperty(String key, Class<T> type);</li>
+<li>T getProperty(String key, Class<T> type, T defaultValue);</li>
+</ul>
+<p>这几个重载方法的作用顾名思义。其中第一、三个方法获取一个不存在的属性时，会抛出<code>IllegalStateException</code>异常。</p>
+<p>可以使用<code>containsProperty(String key)</code>方法查看是否存在某个属性。</p>
+<p>其他相关方法：</p>
+<ul>
+<li><code>Class&lt;T&gt; getPropertyAsClass(String key, Class&lt;T&gt; targetType)</code> : 将获取的属性转换为类</li>
+<li><code>String[] getActiveProfiles()</code> : 返回激活<code>profile</code>名称的数组</li>
+<li><code>String[] getDefaultProfiles()</code> : 返回默认<code>profile</code>名称的数组</li>
+<li><code>boolean acceptsProfiles(String... profiles)</code> : 如果<code>environment</code>支持给定的<code>profile</code>，则返回<code>true</code></li>
+</ul>
+<h3 id="解析属性占位符"><a href="#解析属性占位符" class="headerlink" title="解析属性占位符"></a>解析属性占位符</h3><p>使用占位符，可将属性定义到外部的<code>.properties</code>文件中，然后使用占位符插入到<code>bean</code>中。占位符使用<code>${...}</code>包装属性名称。</p>
+<p>在<code>Java</code>配置中使用<code>@Value</code>注解。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">BlankDisc</span><span class="params">(@Value(<span class="string">"$&#123;disc.title&#125;"</span>)</span> String title,</span></span><br><span class="line"><span class="function">            @<span class="title">Value</span><span class="params">(<span class="string">"$&#123;disc.artist&#125;"</span>)</span> String artist) </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.title = title;</span><br><span class="line">    <span class="keyword">this</span>.artist = artist;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用占位符必须配置一个<code>PropertySourcesPlaceholderConfigurer bean</code>，它能够基于<code>Spring Environment</code>及其属性来解析占位符。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> PropertySourcesPlaceholderConfigurer <span class="title">placeholderConfigurer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> PropertySourcesPlaceholderConfigurer();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用Spring表达式语言进行装配"><a href="#使用Spring表达式语言进行装配" class="headerlink" title="使用Spring表达式语言进行装配"></a>使用<code>Spring</code>表达式语言进行装配</h2><p><code>SpEL</code>主要特性：</p>
+<ul>
+<li>使用<code>bean</code>的<code>ID</code>来引用<code>bean</code></li>
+<li>访问对象的属性和方法</li>
+<li>可对值进行算数、关系和逻辑运算</li>
+<li>正则表达式匹配</li>
+<li>集合操作</li>
+</ul>
+<p><code>SpEL</code>还可以用在<code>DI</code>之外的地方</p>
+<h3 id="SpEL样例"><a href="#SpEL样例" class="headerlink" title="SpEL样例"></a><code>SpEL</code>样例</h3><p><code>SpEL</code>表达式要放在<code>#{ ... }</code>中，里面的”…”就是<code>SpEL</code>表达式。</p>
+<ul>
+<li>#{1}</li>
+</ul>
+<p>常量，结果始终为<code>1</code></p>
+<ul>
+<li>#{T(System).currentTimeMillis()}</li>
+</ul>
+<p><code>T()</code>表达式会将<code>java.lang.System</code>视为<code>Java</code>中对应的类型，然后调用其方法，获取当前时间戳。</p>
+<ul>
+<li>#{dataSource.user}</li>
+</ul>
+<p><code>dataSource</code>为声明的其他<code>bean</code>，这里可以获取它的属性<code>user</code></p>
+<ul>
+<li>#{systemProperties[‘username’]}</li>
+</ul>
+<p>通过<code>systemProperties</code>对象获取系统属性</p>
+<h3 id="表示字面量"><a href="#表示字面量" class="headerlink" title="表示字面量"></a>表示字面量</h3><p>可表示的字面量有<code>int</code>,<code>float/double</code>,<code>String</code>,<code>boolean</code>，其中浮点值可以用科学技术法表示：<code>#{6.18E3}</code></p>
+<h3 id="引用bean、属性和方法"><a href="#引用bean、属性和方法" class="headerlink" title="引用bean、属性和方法"></a>引用<code>bean</code>、属性和方法</h3><table>
+<thead>
+<tr>
+<th align="center">引用对象</th>
+<th align="center">表达式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">bean</td>
+<td align="center"><code>#{dataSource}</code></td>
+</tr>
+<tr>
+<td align="center">bean’s field</td>
+<td align="center"><code>#{dataSource.user}</code></td>
+</tr>
+<tr>
+<td align="center">bean’s method</td>
+<td align="center"><code>#{dataSource.getPassword()}</code></td>
+</tr>
+<tr>
+<td align="center">bean’s method’s method</td>
+<td align="center"><code>#{dataSource.getPassword().toUpperCase()}</code></td>
+</tr>
+</tbody></table>
+<p>如果方法返回值为<code>null</code>，第四种情况会抛出<code>NullPoniterException</code>。可以使用：</p>
+<p><code>#{dataSource.getPassword()?.toUpperCase()}</code></p>
+<p>其中的<code>?.</code>运算符能够在访问前确保不为<code>null</code>，否则返回<code>null</code>。</p>
+<h3 id="在表达式中使用类型"><a href="#在表达式中使用类型" class="headerlink" title="在表达式中使用类型"></a>在表达式中使用类型</h3><p>使用<code>T()</code>表达式来访问<code>Java</code>类中的<code>static</code>方法和常量，在括号内的是类名，返回一个<code>Class</code>对象，然后调用其方法和常量。</p>
+<h3 id="SpEL运算符"><a href="#SpEL运算符" class="headerlink" title="SpEL运算符"></a><code>SpEL</code>运算符</h3><table>
+<thead>
+<tr>
+<th align="center">运算符类型</th>
+<th align="center">运算符</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">算数运算</td>
+<td align="center">+, -, *, /, %, ^</td>
+</tr>
+<tr>
+<td align="center">比较运算</td>
+<td align="center">&lt;, &gt;, ==, &lt;=, &gt;=, lt, gt, eq, le, ge</td>
+</tr>
+<tr>
+<td align="center">逻辑运算</td>
+<td align="center">and, or, not, |</td>
+</tr>
+<tr>
+<td align="center">条件运算</td>
+<td align="center">?: (ternary), ?: (Elvis)</td>
+</tr>
+<tr>
+<td align="center">正则表达式</td>
+<td align="center">matches</td>
+</tr>
+</tbody></table>
+<ul>
+<li><code>Elvis</code>运算符</li>
+</ul>
+<p>利用三元运算符来检查场景：<code>#{disc.title ?: &#39;Rattle and Hum&#39;}</code>，当<code>disc.title</code>为<code>null</code>时，返回<code>&quot;Rattle and Hum&quot;</code>。</p>
+<p>名称的来历据说是因为’?’长得像猫王的头发。。。 <span class="emoji" alias="astonished" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f632.png?v8">&#x1f632;</span><span class="emoji" alias="astonished" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f632.png?v8">&#x1f632;</span><span class="emoji" alias="astonished" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f632.png?v8">&#x1f632;</span></p>
+<ul>
+<li>正则表达式</li>
+</ul>
+<p>正则表达式利用<code>matches</code>来支持正则匹配。</p>
+<h3 id="计算集合"><a href="#计算集合" class="headerlink" title="计算集合"></a>计算集合</h3><ul>
+<li>引入一个元素 : <code>#{jukebox.songs[4].title}</code></li>
+<li>随机选取 : <code>#{jukebox.songs[T(Math).random() * jukebox.songs.size()].title}</code></li>
+<li>从<code>String</code>中获得<code>char</code> : <code>#{&#39;This is a test&#39;[2]}</code></li>
+<li>使用<code>.?[]</code>进行过滤，得到符合条件的子集 : <code>#{jukebox.songs.?[artist eq &#39;Aerosmith&#39;]}</code></li>
+<li>使用<code>.^[]</code>和<code>.$[]</code>进行过滤，得到第一个和最后一个匹配项</li>
+<li>使用<code>.![]</code>从集合的每个成员选择特定属性放入新集合中 : <code>#{jukebox.songs.![title]}</code></li>
+</ul>
+<blockquote>
+<p>最后四个表达式有点像<code>lambda</code>表达式</p>
+</blockquote>
+<p><code>SpEL</code>的表达式可以相互组合使用。</p>
+<blockquote>
+<p>更多<code>Spring</code>学习笔记：<a href="https://github.com/kbyyd24/spring.demo.test/issues" target="_blank" rel="noopener">https://github.com/kbyyd24/spring.demo.test/issues</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/" title="Spring高级装配之运行时注入">https://blog.gaoyuexiang.cn/2016/08/17/Spring高级装配之运行时注入/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/07/29/Sort%20Solors%20%E8%A7%A3%E9%A2%98%E6%80%9D%E8%B7%AF/" rel="prev" title="Sort Colors 解题思路">
+      <i class="fa fa-chevron-left"></i> Sort Colors 解题思路
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/" rel="next" title="服务器配置小记">
+      服务器配置小记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#注入外部的值"><span class="nav-number">1.</span> <span class="nav-text">注入外部的值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#深入了解Spring中的Environment"><span class="nav-number">1.1.</span> <span class="nav-text">深入了解Spring中的Environment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解析属性占位符"><span class="nav-number">1.2.</span> <span class="nav-text">解析属性占位符</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用Spring表达式语言进行装配"><span class="nav-number">2.</span> <span class="nav-text">使用Spring表达式语言进行装配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SpEL样例"><span class="nav-number">2.1.</span> <span class="nav-text">SpEL样例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表示字面量"><span class="nav-number">2.2.</span> <span class="nav-text">表示字面量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#引用bean、属性和方法"><span class="nav-number">2.3.</span> <span class="nav-text">引用bean、属性和方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在表达式中使用类型"><span class="nav-number">2.4.</span> <span class="nav-text">在表达式中使用类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SpEL运算符"><span class="nav-number">2.5.</span> <span class="nav-text">SpEL运算符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算集合"><span class="nav-number">2.6.</span> <span class="nav-text">计算集合</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/";
+    this.page.identifier = "2016/08/17/Spring高级装配之运行时注入/";
+    this.page.title = "Spring高级装配之运行时注入";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

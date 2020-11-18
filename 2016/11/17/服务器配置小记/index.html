@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="最近一个项目要上线了,需要搭服务器,本来是交给同学搭的,结果遇到了大坑,还得自己来,今天把这些坑记一下.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务器配置小记">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="最近一个项目要上线了,需要搭服务器,本来是交给同学搭的,结果遇到了大坑,还得自己来,今天把这些坑记一下.">
+<meta property="article:published_time" content="2016-11-17T00:00:00.000Z">
+<meta property="article:modified_time" content="2016-11-17T00:00:00.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Blog">
+<meta property="article:tag" content=" 博客">
+<meta property="article:tag" content=" Yuexiang">
+<meta property="article:tag" content=" yuexiang">
+<meta property="article:tag" content=" 悦翔">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>服务器配置小记 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          服务器配置小记
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-11-17 00:00:00" itemprop="dateCreated datePublished" datetime="2016-11-17T00:00:00+00:00">2016-11-17</time>
+            </span>
+
+          
+            <span id="/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/" class="post-meta-item leancloud_visitors" data-flag-title="服务器配置小记" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/17/服务器配置小记/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>18 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>最近一个项目要上线了,需要搭服务器,本来是交给同学搭的,结果遇到了大坑,还得自己来,今天把这些坑记一下.</p>
+<p>服务器有好几台,都是<code>CentOS6.X</code>,两台6.8,一台6.4.</p>
+<p>项目需要的环境是<code>Java</code>+<code>Gradle</code>+<code>MySql</code>+<code>Redis</code>+<code>Nginx</code></p>
+<h1 id="太长不看总结版"><a href="#太长不看总结版" class="headerlink" title="太长不看总结版"></a>太长不看总结版</h1><h2 id="顺利的安装"><a href="#顺利的安装" class="headerlink" title="顺利的安装"></a>顺利的安装</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 准备下载工具</span></span><br><span class="line">wget http://ftp.tu-chemnitz.de/pub/linux/dag/redhat/el6/en/x86_64/rpmforge/RPMS/axel-2.4-1.el6.rf.x86_64.rpm</span><br><span class="line">yum localinstall axel-2.4-1.el6.rf.x86_64.rpm -y</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装MySql</span></span><br><span class="line">wget http://dev.mysql.com/get/mysql57-community-release-el6-9.noarch.rpm</span><br><span class="line">yum localinstall mysql57-community-release-el6-9.noarch.rpm -y</span><br><span class="line">yum replist all | grep mysql</span><br><span class="line">yum install yum-utils -y</span><br><span class="line">yum-config-manager --disable mysql57-community</span><br><span class="line">yum-config-manager --enalble mysql56-community</span><br><span class="line">yum install mysql mysql-server mysql-devel -y</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装Nginx</span></span><br><span class="line">echo -e '[nginx]\nname=nginx repo\nbaseurl=http://nginx.org/packages/centos/6/$basearch/\ngpgcheck=0\nenabled=1' &gt; /etc/yum.repos.d/nginx.repo</span><br><span class="line">yum makecache </span><br><span class="line">yum install nginx -y</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装Redis</span></span><br><span class="line">yum install -y tcl</span><br><span class="line">axel -n 5 http://download.redis.io/releases/redis-2.8.24.tar.gz</span><br><span class="line">cd /usr/local</span><br><span class="line">tar zxf ~/redis-2.8.24.tar.gz</span><br><span class="line">mv redis-2.8.24/ redis/</span><br><span class="line">cd redis </span><br><span class="line">make </span><br><span class="line">make test</span><br><span class="line">cd src/</span><br><span class="line">make install</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装Java</span></span><br><span class="line">wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u111-b14/jdk-8u111-linux-x64.tar.gz</span><br><span class="line">mkdir /usr/java</span><br><span class="line">cd /usr/java</span><br><span class="line">tar zxf ~/jdk-8u111-linux-x64.tar.gz</span><br><span class="line">echo 'export JAVA_HOME=/usr/java/jdk1.8.0_111' &gt;&gt; /etc/profile</span><br><span class="line">echo 'export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar' &gt;&gt; /etc/profile</span><br><span class="line">echo 'export PATH=$PATH:$JAVA_HOME/bin' &gt;&gt; /etc/profile</span><br><span class="line">source /etc/profile</span><br><span class="line">java -version</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装Gradle</span></span><br><span class="line">axel -n 5 https://services.gradle.org/distributions/gradle-2.14-bin.zip</span><br><span class="line">mkdir /usr/local/gradle</span><br><span class="line">cd /usr/local/gradle </span><br><span class="line">unzip -q ~/gradle-2.14-bin.zip</span><br><span class="line">echo 'export PATH=$PATH:/usr/local/gradle/gradle-2.14/bin' &gt;&gt; /etc/profile</span><br><span class="line">source /etc/profile</span><br><span class="line">gradle -version</span><br></pre></td></tr></table></figure>
+
+<h2 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h2><h3 id="Docker的莫名错误"><a href="#Docker的莫名错误" class="headerlink" title="Docker的莫名错误"></a>Docker的莫名错误</h3><ul>
+<li>在<code>CentOS6.4</code>上面试过<code>Docker</code>,启动容器后报错,找不到容器</li>
+<li>在<code>CentOS6.8</code>上面,<code>Docker</code>的守护进程总是过一会儿自己就挂掉</li>
+<li>第二台<code>CentOS6.8</code>上面,因为<code>iptables</code>的配置问题,导致<code>127.0.0.1</code>无法访问,引起<code>Docker</code>映射端口没有作用</li>
+<li>第二台<code>CentOS6.8</code>上面使用<code>MySql</code>的镜像,启动配置<code>MYSQL_ROOT_PASSWORD</code>环境变量后面的启动配置不能生效</li>
+</ul>
+<h3 id="MySql的安装中的坑"><a href="#MySql的安装中的坑" class="headerlink" title="MySql的安装中的坑"></a>MySql的安装中的坑</h3><ul>
+<li>CentOS6默认的<code>yum</code>安装的<code>MySql</code>版本是5.1,会出现中文乱码的问题,需要下载<a href="http://dev.mysql.com/get/mysql57-community-release-el6-9.noarch.rpm" target="_blank" rel="noopener">mysql57-community-release-el6-9.noarch.rpm</a>来添加<code>yum</code>源</li>
+<li>添加后的仓库默认激活<code>MySql5.7</code>,<code>CentOS6</code>并不支持,需要激活<code>MySql5.6</code></li>
+<li>enable与disable哪个包可以使用<code>yum-config-manager</code>进行配置,这个命令包含在<code>yum-utils</code>包中,可通过<code>yum</code>安装</li>
+</ul>
+<h3 id="localhost-127-0-0-1-amp-iptables"><a href="#localhost-127-0-0-1-amp-iptables" class="headerlink" title="localhost,127.0.0.1&amp;iptables"></a>localhost,127.0.0.1&amp;iptables</h3><ul>
+<li>现在的主机默认<code>localhost</code>会解析到<code>127.0.0.1</code>,而<code>127.0.0.1</code>会发送到环回的虚拟网卡,回到主机上</li>
+<li><code>MySql</code>是个特立独行的家伙,默认的<code>mysql</code>连接会访问<code>localhost</code>,但不会映射到<code>127.0.0.1</code>上,而是访问配置文件中描述的<code>sock</code>文件,不会经历网络层的传输</li>
+<li><code>127.0.0.1</code>虽然不会离开主机,但也会经过网卡(虽然是虚拟的),所以也会收到<code>iptables</code>的影响</li>
+<li>不要随意删除<code>iptables</code>里面的规则,否则真的会后悔的</li>
+</ul>
+<h2 id="tips"><a href="#tips" class="headerlink" title="tips"></a>tips</h2><ul>
+<li><code>linux</code>上的命令行多线程下载工具:<code>axel</code>,地址:<a href="https://pkgs.org/centos-6/repoforge-x86_64/axel-2.4-1.el6.rf.x86_64.rpm.html" target="_blank" rel="noopener">https://pkgs.org/centos-6/repoforge-x86_64/axel-2.4-1.el6.rf.x86_64.rpm.html</a></li>
+<li><code>nginx</code>可通过<code>yum</code>下载最新稳定版:<a href="http://nginx.org/en/linux_packages.html" target="_blank" rel="noopener">http://nginx.org/en/linux_packages.html</a></li>
+<li>在旧的发行版上安装<code>mysql</code>,优先考虑更新源,而不是下载安装包</li>
+<li>在旧的发行版上,就不要尝试<code>docker</code>了,遇到坑伤不起</li>
+<li>更新你的服务器,大清亡了</li>
+</ul>
+<hr>
+<p>详细版</p>
+<h1 id="在CentOS6-4上的折腾"><a href="#在CentOS6-4上的折腾" class="headerlink" title="在CentOS6.4上的折腾"></a>在CentOS6.4上的折腾</h1><h2 id="关于Mysql的折腾"><a href="#关于Mysql的折腾" class="headerlink" title="关于Mysql的折腾"></a>关于Mysql的折腾</h2><p>我通过<code>MySql</code>官网下载的<code>yum</code>源安装的<code>MySql</code>,在<code>CentOS6.4</code>的系统上执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install mysql mysql-server mysql-devel</span><br></pre></td></tr></table></figure>
+
+<p>没有遇到任何依赖错误,于是顺利安装,然后启动服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">servcie mysqld start</span><br></pre></td></tr></table></figure>
+
+<p>但是得到了失败的结果.于是查看配置文件,找到日志,发现了如下错误信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2016-11-17T21:44:32.121190Z 0 [ERROR] Fatal error: mysql.user table is damaged. Please run mysql_upgrade.</span><br><span class="line">2016-11-17T21:44:32.121315Z 0 [ERROR] Aborting</span><br></pre></td></tr></table></figure>
+
+<p>于是按照他的提示,执行<code>mysql_upgrade</code>,却又提示没有启动<code>mysqld</code>服务..这是一个死锁啊 <span class="emoji" alias="dizzy_face" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f635.png?v8">&#x1f635;</span></p>
+<p>然后移除了这个<code>MySql5.7</code>,向系统妥协,用<code>yum</code>装了个<code>5.1</code>的版本,导入建库语句,没有错误产生,暗道庆幸,还以为是自己多虑了.<br><strong>然而,等我放入数据之后,该来的还是来了.</strong></p>
+<p>我在本地开发环境中是用的是<code>docker</code>(后面会讲<a href="#莫名挂掉的Docker">为什么不在服务器上用<code>docker</code></a>)拉取的<code>MySql5.7</code>,本地测试一切正常.然后放到服务器上,当我查询一个中文的记录的时候,杀机终于显现——<strong>乱码啦</strong> <span class="emoji" alias="scream_cat" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f640.png?v8">&#x1f640;</span></p>
+<p>作为一个对自己代码拥有充分自信的家伙,怎么能是我的问题呢,都怪<code>MySql</code>的版本太低太弱智.</p>
+<h1 id="在第一台CentOS6-8上的折腾"><a href="#在第一台CentOS6-8上的折腾" class="headerlink" title="在第一台CentOS6.8上的折腾"></a>在第一台CentOS6.8上的折腾</h1><p>所以我决定换一台服务器,从头再来.还好实验室服务器多,够我折腾</p>
+<h2 id="先来折腾MySql"><a href="#先来折腾MySql" class="headerlink" title="先来折腾MySql"></a>先来折腾MySql</h2><p>基于在上一台服务器上的惨痛教训,这次我决定先装<code>MySql</code>.</p>
+<p>首先确定发行版本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> cat /etc/issue</span></span><br><span class="line">CentOS release 6.8 (Final)</span><br><span class="line">Kernel \r on an \m</span><br></pre></td></tr></table></figure>
+
+<p>准备下载工具<code>axel</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget http://ftp.tu-chemnitz.de/pub/linux/dag/redhat/el6/en/x86_64/rpmforge/RPMS/axel-2.4-1.el6.rf.x86_64.rpm</span><br><span class="line">yum localinstall -y axel-2.4-1.el6.rf.x86_64.rpm</span><br></pre></td></tr></table></figure>
+
+<p>竟然连<code>wget</code>也要安装一下 <span class="emoji" alias="joy" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f602.png?v8">&#x1f602;</span></p>
+<p>然后安装<code>MySql</code>的<code>yum</code>源并安装<code>MySql</code>,这个文件只有9k,直接用<code>wget</code>就行了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget http://dev.mysql.com/get/mysql57-community-release-el6-9.noarch.rpm</span><br><span class="line">yum localinstall mysql57-community-release-el6-9.noarch.rpm -y</span><br><span class="line">yum install -y mysql mysql-server mysql-devel</span><br></pre></td></tr></table></figure>
+
+<p>然后出现依赖报错</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Error: Package: mysql-community-server-5.7.34-2.el7.x86_64 (mysql56-community)</span><br><span class="line">           Requires: libc.so.6(GLIBC_2.17)(64bit)</span><br><span class="line">Error: Package: mysql-community-server-5.7.34-2.el7.x86_64 (mysql56-community)</span><br><span class="line">           Requires: systemd</span><br><span class="line">Error: Package: mysql-community-client-5.7.34-2.el7.x86_64 (mysql56-community)</span><br><span class="line">           Requires: libc.so.6(GLIBC_2.17)(64bit)</span><br><span class="line">Error: Package: mysql-community-libs-5.7.34-2.el7.x86_64 (mysql56-community)</span><br><span class="line">           Requires: libc.so.6(GLIBC_2.17)(64bit)</span><br><span class="line">Error: Package: mysql-community-server-5.7.34-2.el7.x86_64 (mysql56-community)</span><br><span class="line">           Requires: libstdc++.so.6(GLIBCXX_3.4.15)(64bit)</span><br><span class="line"> You could try using --skip-broken to work around the problem</span><br><span class="line">** Found 1 pre-existing rpmdb problem(s), &#39;yum check&#39; output follows:</span><br><span class="line">tzdata-2016i-1.el6.noarch is a duplicate with tzdata-2012j-1.el6.noarch</span><br></pre></td></tr></table></figure>
+
+<p>我网上找了半天也没找到怎么解决这个错误的解决办法,应该是<code>CentOS6.8</code>不支持,于是放弃自己安装,准备上<code>docker</code></p>
+<h2 id="莫名挂掉的Docker"><a href="#莫名挂掉的Docker" class="headerlink" title="莫名挂掉的Docker"></a>莫名挂掉的Docker</h2><p>我平常使用的是<a href="http://daocloud.io/" target="_blank" rel="noopener">daocloud.io</a>的<code>docker</code>镜像,这里也使用这个安装</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">curl -sSL https://get.daocloud.io/docker | sh</span><br><span class="line">chkconfig docker on</span><br><span class="line">servcie docker start</span><br></pre></td></tr></table></figure>
+
+<p>然后拉取<code>MySql</code>的镜像、运行,一切正常.然后拉取<code>redis</code>和<code>nginx</code>,如果一切正常的话,很快就能搞定了.</p>
+<p>然而可怕的情况出现了,拉取过程挂掉了… <span class="emoji" alias="scream" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f631.png?v8">&#x1f631;</span> 于是查看<code>docker</code>守护进程,发现守护进程竟然挂掉了!我可是什么都没做啊!而且三更半夜,谁会和我一起搞服务器?! <span class="emoji" alias="question" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2753.png?v8">&#x2753;</span></p>
+<p>对于这种莫名的原因,我感觉很是害怕.因为之前这台主机是被动过的,所以我不知道是不是别人动过什么.决定再换一台没动过的主机来搞.</p>
+<h1 id="在第二台CentOS6-8上的折腾"><a href="#在第二台CentOS6-8上的折腾" class="headerlink" title="在第二台CentOS6.8上的折腾"></a>在第二台CentOS6.8上的折腾</h1><p>我没有在这台主机上尝试<code>docker</code>,我已经不信任在<code>CentOS6.X</code>环境中的<code>docker</code>了,直接来安装<code>MySql</code>吧</p>
+<h2 id="还是先来MySql"><a href="#还是先来MySql" class="headerlink" title="还是先来MySql"></a>还是先来MySql</h2><p>这次我找到了这篇文章<a href="https://segmentfault.com/a/1190000003049498" target="_blank" rel="noopener">https://segmentfault.com/a/1190000003049498</a></p>
+<p>什么,竟然<code>yum</code>源还有激活这个事情?! <span class="emoji" alias="scream" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f631.png?v8">&#x1f631;</span> 我还是太天真,太孤陋寡闻.于是赶紧查看一下<code>MySql</code>源的激活情况</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum repolist all | grep mysql</span><br></pre></td></tr></table></figure>
+
+<p>果然默认激活<code>5.7</code>,于是我选择降低一个版本,使用<code>5.6</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">yum install -y yum-utils</span><br><span class="line">yum-config-manager --disable mysql57-community</span><br><span class="line">yum-config-manager --enalbe mysql56-community</span><br><span class="line">yum install -y mysql mysql-server mysql-devel</span><br></pre></td></tr></table></figure>
+
+<p>欣喜的看到安装成功了,但是有之前在<code>CentOS6.4</code>上的惨痛教训,我还是不敢高兴的太早,至少<code>mysql</code>先要能运行起来</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">service mysqld start</span><br></pre></td></tr></table></figure>
+
+<p>然后根据提示,可以执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysqladmin -u root password 'new_root_pass'</span><br><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+
+<p>然后就是少有的顺利安装完成,然后登录,创建一个数据库和用户并授权,再用新的用户登录建库,都没有问题.我想应该是OK了</p>
+<h2 id="用yum安装Nginx-1-10-2"><a href="#用yum安装Nginx-1-10-2" class="headerlink" title="用yum安装Nginx-1.10.2"></a>用yum安装Nginx-1.10.2</h2><p>接下来就是<code>nginx</code>了,官网就有教程教你怎么用<code>yum</code>安装<a href="http://nginx.org/en/linux_packages.html" target="_blank" rel="noopener">http://nginx.org/en/linux_packages.html</a></p>
+<p>于是我就照着教程的样子创建了一个<code>/etc/yum.repos.d/nginx.repo</code>,内容如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[nginx]</span><br><span class="line">name&#x3D;nginx repo</span><br><span class="line">baseurl&#x3D;http:&#x2F;&#x2F;nginx.org&#x2F;packages&#x2F;centos&#x2F;6&#x2F;$basearch&#x2F;</span><br><span class="line">gpgcheck&#x3D;0</span><br><span class="line">enabled&#x3D;1</span><br></pre></td></tr></table></figure>
+
+<p>然后安装、配置、启动、测试都正常通过.按照我”多年”的<code>nginx</code>使用经验,这个家伙是安装完成了.</p>
+<h2 id="安装Redis–异常初现"><a href="#安装Redis–异常初现" class="headerlink" title="安装Redis–异常初现"></a>安装Redis–异常初现</h2><p>接着是<code>Redis</code>,只有编译安装这一个方法.因为使用的是<code>Spring</code>框架连接<code>Redis</code>所以下载了一个<code>Redis-2.8</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">yum install -y tcl</span><br><span class="line"><span class="meta">#</span><span class="bash"> tcl 是 redis 的依赖,可以通过执行 &#123;redis_home&#125;/runtest 了解 redis 需要安装的依赖</span></span><br><span class="line">axel -n 5 http://download.redis.io/releases/redis-2.8.24.tar.gz</span><br><span class="line">cd /usr/local</span><br><span class="line">tar zxf ~/redis-2.8.24.tar.gz</span><br><span class="line">mv redis-2.8.24/ redis/</span><br><span class="line">cd redis </span><br><span class="line">make </span><br><span class="line">make test</span><br><span class="line">cd src/</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<p>然后在<code>make test</code>的时候出现了错误</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Executing test client: couldn&#39;t open socket: host is unreachable. </span><br><span class="line">couldn&#39;t open socket: host is unreachable     </span><br><span class="line">while executing</span><br></pre></td></tr></table></figure>
+
+<p>google了好久也没找到解决方案,索性就不管它,直接启动<code>redis-server</code>,然后使用客户端测试连接,却得到错误</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Could not connect to Redis at 127.0.0.1:6379: No route to host</span><br></pre></td></tr></table></figure>
+
+<p>这我就想不通了,但是没关系,之前那台<code>CentOS6.4</code>上面还有<code>redis</code>服务,配置一下防火墙就行了,先测试<code>mysql</code>乱不乱码要紧.</p>
+<h2 id="异常真凶浮出水面"><a href="#异常真凶浮出水面" class="headerlink" title="异常真凶浮出水面"></a>异常真凶浮出水面</h2><p>于是我急匆匆的把代码clone下来,修改一下<code>redis-server</code>地址就跑起来了.<br>然后访问一下试试.然后<code>Spring Boot</code>内置的<code>Tomcat</code>的数据库连接池就报错了.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java.net.NoRouteToHostException: 没有到主机的路由</span><br></pre></td></tr></table></figure>
+
+<p>这次我就真懵逼了:<code>Mysql</code>不是在运行吗?不是能连上吗?这怎么就不行了?难道我必须得用<code>Docker</code>,还要解决<code>daemon</code>离奇死亡的问题?</p>
+<p><strong>咦?<code>Docker</code>?<code>MySql</code>?</strong></p>
+<p>于是我想到了什么,便在服务器的命令行连接了一次<code>MySql</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mysql -h 127.0.0.1 -u user -ppassword</span><br><span class="line">ERROR 2003 (HY000): Can&#39;t connect to MySQL server on &#39;127.0.0.1&#39; (113)</span><br></pre></td></tr></table></figure>
+
+<p>果然,和<code>redis</code>遇到的错误是同一个原因:<strong>无法访问127.0.0.1上的服务</strong></p>
+<blockquote>
+<p>我是怎么想到的?</p>
+<p>因为我本地的<code>mysql</code>是使用<code>docker</code>运行的,所以我要连接<code>mysql</code>,访问地址必须得是<code>127.0.0.1</code>,所以项目的配置就写的<code>127.0.0.1</code></p>
+<p>为什么呢?因为<code>mysql</code>对<code>localhost</code>的请求做了优化,直接走<code>socket</code>的路线,没有通过<code>127.0.0.1</code>去连接,所以<code>docker</code>运行的<code>mysql</code>如果没做<code>sock</code>文件的映射,是不能通过<code>localhost</code>访问的.而<code>mysql</code>客户端默认使用的地址正是<code>localhost</code></p>
+<p>这就是为什么一开始我能通过<code>mysql</code>命令连接上<code>mysql-server</code>,而加上<code>-h 127.0.0.1</code>参数就不行了的原因.</p>
+</blockquote>
+<p>知道了原因,那就很好对症下药了.</p>
+<h2 id="菜鸡的防火墙配置–服务器血崩"><a href="#菜鸡的防火墙配置–服务器血崩" class="headerlink" title="菜鸡的防火墙配置–服务器血崩"></a>菜鸡的防火墙配置–服务器血崩</h2><p><code>127.0.0.1</code>虽然是访问的本机,但实际请求也是会经过网卡(虚拟网卡)的.所以应该是防火墙拦截了我的请求.那么开始与<code>iptables</code>做斗争吧.</p>
+<p>对一个安全菜鸡来说,搞防火墙是一件需要小心谨慎的事情;但对一个熬夜的菜鸡来说,理智什么的都已经走远了 <span class="emoji" alias="joy" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f602.png?v8">&#x1f602;</span></p>
+<p>这是一开始我看到的<code>iptables</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Chain INPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination         </span><br><span class="line">1    ACCEPT     tcp  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           tcp dpt:9000 </span><br><span class="line">2    ACCEPT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           state RELATED,ESTABLISHED </span><br><span class="line">3    ACCEPT     icmp --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           </span><br><span class="line">4    ACCEPT     tcp  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           state NEW tcp dpt:22 </span><br><span class="line">5    REJECT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           reject-with icmp-host-prohibited </span><br><span class="line"></span><br><span class="line">Chain FORWARD (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination         </span><br><span class="line">1    ACCEPT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           ctstate RELATED,ESTABLISHED </span><br><span class="line">2    ACCEPT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           </span><br><span class="line">3    REJECT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           reject-with icmp-host-prohibited </span><br><span class="line">4    ACCEPT     all  --  0.0.0.0&#x2F;0            0.0.0.0&#x2F;0           </span><br><span class="line"></span><br><span class="line">Chain OUTPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt source               destination</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>第一条规则是我设置的,确定没问题(这时我还保有理智)</li>
+<li>第二条什么鬼?删了!</li>
+</ul>
+<p>于是一条命令执行出去了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -D INPUT 2</span><br></pre></td></tr></table></figure>
+
+<p>然后这台主机今晚就变成一条废咸鱼了,我也像吃了鲱鱼罐头一样清醒了.</p>
+<p>我竟然把<code>RELATED</code>和<code>ESTABLISHED</code>的连接都给拒绝了!!! <span class="emoji" alias="scream" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f631.png?v8">&#x1f631;</span></p>
+<p>经过半个小时的头(zi)脑(wo)风(feng)暴(ci), 我想起第一台<code>CentOS6.8</code>的主机,也许我激活一下<code>mysql5.6</code>还有救</p>
+<h1 id="回到第一台CentOS6-8的再次折腾"><a href="#回到第一台CentOS6-8的再次折腾" class="headerlink" title="回到第一台CentOS6.8的再次折腾"></a>回到第一台CentOS6.8的再次折腾</h1><p>有了前几次的经验总结,这一次搭建变得顺利起来</p>
+<h2 id="顺利安装MySql"><a href="#顺利安装MySql" class="headerlink" title="顺利安装MySql"></a>顺利安装MySql</h2><p>先是安装<code>MySql</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">yum-config-manager --disable mysql57-community</span><br><span class="line">yum-config-manager --enable mysql56-community</span><br><span class="line">yum install -y mysql mysql-server mysql-devel</span><br><span class="line">service mysqld start</span><br><span class="line">mysqladin -u root password 'new_root_pass'</span><br><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+
+<h2 id="成功安装并运行的Redis"><a href="#成功安装并运行的Redis" class="headerlink" title="成功安装并运行的Redis"></a>成功安装并运行的Redis</h2><p>接下来是<code>Redis</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">yum install -y tcl</span><br><span class="line">axel -n 5 http://download.redis.io/releases/redis-2.8.24.tar.gz</span><br><span class="line">cd /usr/local</span><br><span class="line">tar zxf ~/redis-2.8.24.tar.gz</span><br><span class="line">mv redis-2.8.24/ redis/</span><br><span class="line">cd redis </span><br><span class="line">make </span><br><span class="line">make test</span><br><span class="line">cd src/</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<p>对于<code>Redis</code>还修改了一些默认配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">daemonize yes</span><br><span class="line">bind 0.0.0.0</span><br><span class="line">logfile &quot;&#x2F;var&#x2F;log&#x2F;redis.log&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后使用这个配置文件启动</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-server /usr/local/redis/redis.conf</span><br></pre></td></tr></table></figure>
+
+<h2 id="同样顺利的Nginx"><a href="#同样顺利的Nginx" class="headerlink" title="同样顺利的Nginx"></a>同样顺利的Nginx</h2><p>然后是<code>Nginx</code>,先按照官网的方法设置<code>yum</code>仓库</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">yum makecache</span><br><span class="line">yum install -y nginx</span><br><span class="line">service nginx start</span><br></pre></td></tr></table></figure>
+
+<p>这个方法安装的<code>Nginx</code>是默认开机启动的.测试一下,能够正常运行,然后配置了一下,做了个反向代理绕过跨域,重启.</p>
+<h2 id="安装Java"><a href="#安装Java" class="headerlink" title="安装Java"></a>安装Java</h2><p>接着是<code>Java</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u111-b14/jdk-8u111-linux-x64.tar.gz</span><br><span class="line">mkdir /usr/java</span><br><span class="line">cd /usr/java</span><br><span class="line">tar zxf ~/jdk-8u111-linux-x64.tar.gz</span><br><span class="line">echo 'export JAVA_HOME=/usr/java/jdk1.8.0_111' &gt;&gt; /etc/profile</span><br><span class="line">echo 'export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar' &gt;&gt; /etc/profile</span><br><span class="line">echo 'export PATH=$PATH:$JAVA_HOME/bin' &gt;&gt; /etc/profile</span><br><span class="line">source /etc/profile</span><br><span class="line">java -version</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装Gradle"><a href="#安装Gradle" class="headerlink" title="安装Gradle"></a>安装Gradle</h2><p>最后是<code>Gradle</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">axel -n 5 https://services.gradle.org/distributions/gradle-2.14-bin.zip</span><br><span class="line">mkdir /usr/local/gradle</span><br><span class="line">cd /usr/local/gradle </span><br><span class="line">unzip -q ~/gradle-2.14-bin.zip</span><br><span class="line">echo 'export PATH=$PATH:/usr/local/gradle/gradle-2.14/bin' &gt;&gt; /etc/profile</span><br><span class="line">source /etc/profile</span><br><span class="line">gradle -version</span><br></pre></td></tr></table></figure>
+
+<p>终于,把所有的东西都装好了,赶快把代码拉下来跑一跑,终于没有乱码了,接口都能正常使用.而此时,天都开始亮了..</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/" title="服务器配置小记">https://blog.gaoyuexiang.cn/2016/11/17/服务器配置小记/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/08/17/Spring%E9%AB%98%E7%BA%A7%E8%A3%85%E9%85%8D%E4%B9%8B%E8%BF%90%E8%A1%8C%E6%97%B6%E6%B3%A8%E5%85%A5/" rel="prev" title="Spring高级装配之运行时注入">
+      <i class="fa fa-chevron-left"></i> Spring高级装配之运行时注入
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/11/20/get_RequestBody_by_aop/" rel="next" title="使用AOP获取RequestBody">
+      使用AOP获取RequestBody <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#太长不看总结版"><span class="nav-number">1.</span> <span class="nav-text">太长不看总结版</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#顺利的安装"><span class="nav-number">1.1.</span> <span class="nav-text">顺利的安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坑"><span class="nav-number">1.2.</span> <span class="nav-text">坑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker的莫名错误"><span class="nav-number">1.2.1.</span> <span class="nav-text">Docker的莫名错误</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MySql的安装中的坑"><span class="nav-number">1.2.2.</span> <span class="nav-text">MySql的安装中的坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#localhost-127-0-0-1-amp-iptables"><span class="nav-number">1.2.3.</span> <span class="nav-text">localhost,127.0.0.1&amp;iptables</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tips"><span class="nav-number">1.3.</span> <span class="nav-text">tips</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#在CentOS6-4上的折腾"><span class="nav-number">2.</span> <span class="nav-text">在CentOS6.4上的折腾</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#关于Mysql的折腾"><span class="nav-number">2.1.</span> <span class="nav-text">关于Mysql的折腾</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#在第一台CentOS6-8上的折腾"><span class="nav-number">3.</span> <span class="nav-text">在第一台CentOS6.8上的折腾</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#先来折腾MySql"><span class="nav-number">3.1.</span> <span class="nav-text">先来折腾MySql</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#莫名挂掉的Docker"><span class="nav-number">3.2.</span> <span class="nav-text">莫名挂掉的Docker</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#在第二台CentOS6-8上的折腾"><span class="nav-number">4.</span> <span class="nav-text">在第二台CentOS6.8上的折腾</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#还是先来MySql"><span class="nav-number">4.1.</span> <span class="nav-text">还是先来MySql</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用yum安装Nginx-1-10-2"><span class="nav-number">4.2.</span> <span class="nav-text">用yum安装Nginx-1.10.2</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Redis–异常初现"><span class="nav-number">4.3.</span> <span class="nav-text">安装Redis–异常初现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异常真凶浮出水面"><span class="nav-number">4.4.</span> <span class="nav-text">异常真凶浮出水面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#菜鸡的防火墙配置–服务器血崩"><span class="nav-number">4.5.</span> <span class="nav-text">菜鸡的防火墙配置–服务器血崩</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#回到第一台CentOS6-8的再次折腾"><span class="nav-number">5.</span> <span class="nav-text">回到第一台CentOS6.8的再次折腾</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#顺利安装MySql"><span class="nav-number">5.1.</span> <span class="nav-text">顺利安装MySql</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成功安装并运行的Redis"><span class="nav-number">5.2.</span> <span class="nav-text">成功安装并运行的Redis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#同样顺利的Nginx"><span class="nav-number">5.3.</span> <span class="nav-text">同样顺利的Nginx</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Java"><span class="nav-number">5.4.</span> <span class="nav-text">安装Java</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Gradle"><span class="nav-number">5.5.</span> <span class="nav-text">安装Gradle</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2016/11/17/%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E5%B0%8F%E8%AE%B0/";
+    this.page.identifier = "2016/11/17/服务器配置小记/";
+    this.page.title = "服务器配置小记";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

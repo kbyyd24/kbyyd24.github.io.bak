@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Eureka 是 Spring Cloud Netflix 的服务注册与发现工具。一般情况下，它都能很好的工作，但有时却会出现一些匪夷所思的情况。今天我们就来研究一下不当的配置导致的幽灵服务。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="Eureka 是 Spring Cloud Netflix 的服务注册与发现工具。一般情况下，它都能很好的工作，但有时却会出现一些匪夷所思的情况。今天我们就来研究一下不当的配置导致的幽灵服务。">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/12-online-client.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/12-1-offline-client.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/13-online-client.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/13-1-offline-client.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/13-evicted-client.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/13-2-offline.png">
+<meta property="article:published_time" content="2020-07-25T23:31:52.000Z">
+<meta property="article:modified_time" content="2020-07-25T23:31:52.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Spring Cloud">
+<meta property="article:tag" content="Eureka">
+<meta property="article:tag" content="self preservation">
+<meta property="article:tag" content="自我保护模式">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/12-online-client.png">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-25 23:31:52" itemprop="dateCreated datePublished" datetime="2020-07-25T23:31:52+00:00">2020-07-25</time>
+            </span>
+
+          
+            <span id="/2020/07/25/eureka-self-preservation-mode/" class="post-meta-item leancloud_visitors" data-flag-title="Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2020/07/25/eureka-self-preservation-mode/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/07/25/eureka-self-preservation-mode/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2020/07/25/eureka-self-preservation-mode/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/07/25/eureka-self-preservation-mode/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Eureka 是 Spring Cloud Netflix 的服务注册与发现工具。一般情况下，它都能很好的工作，但有时却会出现一些匪夷所思的情况。<br>今天我们就来研究一下不当的配置导致的幽灵服务。</p>
+<h1 id="幽灵出现"><a href="#幽灵出现" class="headerlink" title="幽灵出现"></a>幽灵出现</h1><p>我们先来给幽灵服务做一个定义：它们是 Eureka 注册表中的一些节点，但是它们实际上已经被关闭了，永远无法访问。</p>
+<p>我们可以通过 <code>GET /eureka/apps</code> 获取 Eureka 中注册的节点信息，其中包含了节点的最后更新时间： lastRenewalTimestamp 。如果发现这个时间已经过去了很久，那么这个节点可能就是一个幽灵节点。</p>
+<p>这其实是一个非常反常的现象，因为 Eureka client 在关闭时，通过 <code>@PreDestroy</code> 触发 <code>DiscoveryClient.shutdown()</code> 方法，向 Eureka Server 发送 shutdown 请求，从 Eureka Server 注册表中注销。</p>
+<p>那么问题来了。</p>
+<h1 id="为什么这些服务没有注销？"><a href="#为什么这些服务没有注销？" class="headerlink" title="为什么这些服务没有注销？"></a>为什么这些服务没有注销？</h1><p>因为 <code>@PreDestroy</code> 是用来处理 <code>SIGTERM</code> 等信号的，所以只有在通过这些信息关闭 Eureka client 时，Eureka client 才会向 Eureka Server 发送 shutdown 请求。<br>但是如果是通过 <code>kill -9</code> 这样的指令，或者是 <a href="/2020/06/18/graceful-shutdown-docker-container/">不优雅的 stop docker</a> ，即发送 <code>SIGKILL</code> 信号，都不会触发 <code>PreDestroy</code>，那么这些 Eureka client 也就不会被注销了。</p>
+<p>那么问题又来了。</p>
+<h1 id="难道-Eureka-不会清理过期的注册信息吗？"><a href="#难道-Eureka-不会清理过期的注册信息吗？" class="headerlink" title="难道 Eureka 不会清理过期的注册信息吗？"></a>难道 Eureka 不会清理过期的注册信息吗？</h1><p>其实是会的。</p>
+<p>在 Eureka Server 的核心库 <code>eureka-core</code> 中，有一个 <code>AbstractInstanceRegistry</code> 类，其中实现了 <code>evict()</code> 方法，用来完成清理过期注册信息的工作。这个方法被一个 <code>TimerTask</code> 定时调用，默认间隔时间是 60s。</p>
+<p>在这个方法中，Eureka server 会：</p>
+<ol>
+<li>找到所有过期的 <code>Lease</code> (对应一个 Eureka client 节点)</li>
+<li>通过本地注册的 <code>Lease</code> 数量和一个阈值 <em>(后面还有戏份)</em> 计算出一个 evictonLimit 数值</li>
+<li>比较过期的 <code>Lease</code> 数量和 evictionLimit 的大小，选出小的那个数作为本次清理的数量</li>
+<li>从过期的 <code>List&lt;Lease&gt;</code> 中随机挑出 n 个 <code>Lease</code>，删除 (这里的 n 就是上一步的结果)</li>
+</ol>
+<p>这里的阈值通过 <code>eureka.server.renewal-percent-threshold</code> 设置，默认值是 0.85。</p>
+<p>后面限制每次清理节点数量的算法，只是一种性能优化的考虑。如果忽略掉这部分的逻辑，我们可以认为，一个节点长时间没有向 Eureka server 发送心跳请求，那么它的 <code>Lease</code> 就会过期，最终被定时任务清楚掉。</p>
+<p>因为默认的租期时间是 90s，evict 周期是 60s，所以一个服务被不优雅的关闭后，最多经过 120s 就可以被清理出注册表。</p>
+<p>但是 eureka 在这里却有一个 <a href="https://github.com/Netflix/eureka/issues/531" target="_blank" rel="noopener">bug</a>。Eureka server 在接收到心跳请求时，会把当前时间加上租期时间作为最后接收到心跳的时间。然后在清理时，又会在这个时间上再加一个租期时间来判断是否过期。所以一个服务过期时间总共是 180s，它被不优雅的关闭后最多经过 240s 就会被清理掉。</p>
+<p>但是事情可能没有那么简单，别说 240s，就是过了两天，这些幽灵服务可能还在你的注册表里。</p>
+<p>这就涉及到另一个问题，Eureka server self-preservation mode.</p>
+<h1 id="自我保护模式"><a href="#自我保护模式" class="headerlink" title="自我保护模式"></a>自我保护模式</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>Eureka client 之间调用时，不会向 Eureka server 发送任何请求，而是根据本地维护的注册表，找到需要调用的服务，直接调用，也就是 peer to peer 的模式。本地的注册表，其实是从 Eureka server 拉取回来的，默认每 30s 拉取一次更新。<br>那么当 Eureka server 因为网络震荡没有接收到某些 Eureka client 发送的心跳请求时，并不意味着 Eureka client 之间的网络也出现了问题，Eureka client 之间可能仍然能够访问。<br>如果这个时候更新注册表，清理了只是因为网络震荡而没有发送心跳的节点，那么本可能成功的调用就会失败。<br>为了减少对服务的影响，Eureka 默认启动了自我保护模式，不会清理掉过期的注册信息。</p>
+<p>官方详细的解释可以看<a href="https://github.com/Netflix/eureka/wiki/Server-Self-Preservation-Mode" target="_blank" rel="noopener">这里</a>。</p>
+<h2 id="自我保护的逻辑"><a href="#自我保护的逻辑" class="headerlink" title="自我保护的逻辑"></a>自我保护的逻辑</h2><p>在上面介绍的 <code>evict</code> 方法的逻辑之前，eureka 会首先调用 <code>isLeaseExpirationEnabled</code> 方法，以判断是否要执行后续的清理逻辑。</p>
+<p>这个方法首先会判断是否启用了自我保护模式，如果没有启用，那么就返回 <code>true</code>，否则会返回下面这个表达式的结果。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">number-of-renews-per-min-threshold &gt; 0 </span><br><span class="line">  &amp;&amp; num-of-renews-in-last-min &gt; number-of-renews-per-min-threshold</span><br></pre></td></tr></table></figure>
+
+<p>那么接下来我们就看看这两个值是什么。</p>
+<h3 id="Number-of-Renews-in-Last-Minute"><a href="#Number-of-Renews-in-Last-Minute" class="headerlink" title="Number of Renews in Last Minute"></a>Number of Renews in Last Minute</h3><p>这个值的含义顾名思义，就是过去一分钟内，eureka server 接收到的心跳请求次数。这不是实时数据，而是每分钟更新一次。具体逻辑被 <code>MeasureRate</code> 实现。</p>
+<p>由于 eureka client 默认配置的心跳间隔是 30s，所以这默认情况下的这个值就是 <code>2*client-size</code>。</p>
+<h3 id="Number-of-Renews-per-Minute-Threshold"><a href="#Number-of-Renews-per-Minute-Threshold" class="headerlink" title="Number of Renews per Minute Threshold"></a>Number of Renews per Minute Threshold</h3><p>这个值就相对复杂一些，表示的是触发自我保护模式的心跳阈值。根据表达式，就明白它的含义：当过去一分钟实际接收到的心跳总数小于等于这个心跳阈值时，就会触发自我保护模式，Eureka server 就不会清理注册信息。</p>
+<p>接着，我们来看看这个阈值是如何计算出来的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(int) (expected-number-of-clients-sending-renews </span><br><span class="line">  * (60.0 &#x2F; expected-client-renewal-interval-seconds)</span><br><span class="line">  * renewal-percent-threshold)</span><br></pre></td></tr></table></figure>
+
+<p>好了，这里又冒出来三个值，我们先来看看后两个。</p>
+<h4 id="Expected-Client-Renewal-Interval-Seconds"><a href="#Expected-Client-Renewal-Interval-Seconds" class="headerlink" title="Expected Client Renewal Interval Seconds"></a>Expected Client Renewal Interval Seconds</h4><p>这是一个配置的值，默认 30s，通过 <code>eureka.server.expected-client-renewal-interval-seconds</code> 配置。</p>
+<p>需要注意的是，这个值不是 client 真实的发送心跳的时间间隔，真实的心跳间隔是值 client 中配置的 <code>eureka.instance.lease-renewal-interval-in-seconds</code>，同样默认 30s。</p>
+<p>但这两个值显然应该保持一致，因为上面的 number-of-renews-in-last-min 其实就是 <code>(60 / lease-renewal-interval-in-seconds) * client-size</code>，而这里也几乎是同样的逻辑（如果把 expected-number-of-clients-sending-renews 看作 <code>client-size</code> 的话）。</p>
+<h4 id="Renewal-Percent-Threshold"><a href="#Renewal-Percent-Threshold" class="headerlink" title="Renewal Percent Threshold"></a>Renewal Percent Threshold</h4><p>这个值在前面讲清理注册信息的时候已经讲过了，默认值 0.85。</p>
+<h4 id="Expected-Number-of-Clients-Sending-Renews"><a href="#Expected-Number-of-Clients-Sending-Renews" class="headerlink" title="Expected Number of Clients Sending Renews"></a>Expected Number of Clients Sending Renews</h4><p>根据名字，这个值代表的是期望的会发送心跳请求的 client 数量，也就是前面的 <code>client-size</code>。但是实际上的值却有可能不同。</p>
+<p>这个值的一个更新时间是启动 eureka server 时。Eureka server 会尝试从配置的邻居 server 节点拉取注册表信息来配置。如果没有邻居节点，或者注册表中没有信息的话，就会被设置为默认值 1，通过 <code>eureka.server.defaultOpenForTrafficCount</code> 配置。</p>
+<blockquote>
+<p>不是很明白为什么要设置默认值为 1。不过相关代码中，在注册与注销时，都只有在这个值大于 0 时才会更新。</p>
+</blockquote>
+<p>这个值的另一个更新时间是一个定时任务，默认每 15min 执行一次。可以通过 <code>eureka.server.renewal-threshold-update-interval-ms</code> 修改这个时间。</p>
+<p>最后，每当这个值被更新之后，都会更新我们的心跳阈值。</p>
+<p>了解了上面的这些逻辑，我们了解到，如果符合 <code>应有的心跳数 - 失去的心跳数 ≤ 心跳阈值</code>，那么就会触发自我保护机制。</p>
+<h2 id="处理一个幽灵服务的极限值"><a href="#处理一个幽灵服务的极限值" class="headerlink" title="处理一个幽灵服务的极限值"></a>处理一个幽灵服务的极限值</h2><p>了解了前面这些，我不禁产生一个疑问：在默认配置的情况下，有多少个 client 之后，eureka server 才会清理掉过期的注册信息？出现多少个过期的注册信息，就会触发自我保护模式？</p>
+<p>这其实只是一个数学问题。假设集群中一共有 n 个 client，eureka server 能接受的不会触发自我保护模式的过期注册信息个数有 m 个，那么我们就可以有如下的推导：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">threshold &#x3D; (n + default-open-for-traffic-count) * (60 &#x2F; expect-client-renewal-interval-second) * renewal-percent-threshold</span><br><span class="line">&#x2F;&#x2F; 带入默认的配置之后</span><br><span class="line">&#x3D;&gt; threshold &#x3D; (n + 1) * (60 &#x2F; 30) * 0.85 &#x3D; 1.7(n + 1)</span><br><span class="line">&#x2F;&#x2F; 因为每 30s 发送一次心跳，所以 n 个服务就应该有 2n 个心跳， m 个幽灵服务就会失去 2m 个心跳</span><br><span class="line">2n - 2m ≤ 1.7(n + 1)</span><br><span class="line">&#x3D;&gt; 2n - 1.7(n + 1) ≤ 2m</span><br><span class="line">&#x3D;&gt; 0.15n - 0.85 ≤ m</span><br></pre></td></tr></table></figure>
+
+<p>所以，一个集群如果要能够处理一个过期的注册信息，也就是 m=1， 那么至少需要有多于 12.33 个 eureka client，也就是 13 个。<br>换句话说，在默认配置下，如果集群中只有不到 13 个服务，那么任何一个服务被不优雅的关闭，都会出现幽灵服务。</p>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>为了验证上面的结论，我写了个 <a href="https://github.com/kbyyd24/eureka-self-preservation-verify" target="_blank" rel="noopener">demo</a> 来验证一下。</p>
+<blockquote>
+<p>为了保证每分钟的 <code>evict</code> 方法都用到最新的心跳阈值，我把 <code>expected-number-of-clients-sending-renews</code> 的更新时间设置为了 60s。</p>
+</blockquote>
+<blockquote>
+<p>这个 demo 用了 docker-compose，验证的步骤需要启动 14 个 container，想要试试的同学需要给自己的 docker 多分配点资源。</p>
+</blockquote>
+<h4 id="12-个-client-会触发自我保护模式"><a href="#12-个-client-会触发自我保护模式" class="headerlink" title="12 个 client 会触发自我保护模式"></a>12 个 client 会触发自我保护模式</h4><p>话不多说，直接启动</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d eureka-clinet=12</span><br></pre></td></tr></table></figure>
+
+<p>稍等一会儿，访问 <a href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a> 就可以在 eureka 的页面上看到两个值：</p>
+<ul>
+<li>Renews threshold: 22</li>
+<li>Renews (last min): 24</li>
+</ul>
+<p><img src="12-online-client.png" alt=""></p>
+<p>这两个值都符合上面的数学计算。</p>
+<p>然后，随便杀掉一个 client (一定要使用 docker kill，避免 client 发送 shutdown 请求):</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker kill eureka-self-preservation-verify_eureka-client_1</span><br></pre></td></tr></table></figure>
+
+<p>然后几分钟过去了，eureka server 的注册服务仍然有 12 个。</p>
+<p><img src="12-1-offline-client.png" alt=""></p>
+<h4 id="13-个-client-能够处理掉一个幽灵服务"><a href="#13-个-client-能够处理掉一个幽灵服务" class="headerlink" title="13 个 client 能够处理掉一个幽灵服务"></a>13 个 client 能够处理掉一个幽灵服务</h4><p>还是上面的命令，只是这次我们启动 13 个 eureka-client</p>
+<p><img src="13-online-client.png" alt=""></p>
+<p>然后也是随便杀掉一个 client，等待结果。</p>
+<p>被杀掉的节点被清理前：</p>
+<p><img src="13-1-offline-client.png" alt=""></p>
+<p>被杀掉的节点被清理后：</p>
+<p><img src="13-evicted-client.png" alt=""></p>
+<p>还可以观察一下杀掉两个 client 的效果：</p>
+<p><img src="13-2-offline.png" alt=""></p>
+<p>同时，也可以利用 <code>GET /eureka/apps</code> 查看注册信息，关注被杀掉的节点的 lastRenewalTimestamp 信息。这是它的最后注册时间，因为加了 90s，所以应该是一个未来的时间。用这个时间加上 90s，在这之后的第一次 <code>evict</code> 就应该清理掉这个节点信息，这可以在 eureka-server 的日志中看到。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>我们研究了 eureka 的自我保护模式，它的目的是避免在出现网络震荡时删除掉可能正常工作的节点信息。但如果配置不当，自我保护模式反而可能产生幽灵服务。</p>
+<p>可以影响到自我保护模式的配置主要有两个：</p>
+<ul>
+<li><code>eureka.server.enable-self-preservation</code> 默认为 <code>true</code></li>
+<li><code>eureka.server.renewal-percent-threshold</code> 默认为 0.85</li>
+</ul>
+<p>根据实际的情况，我们可能需要直接关闭自我保护模式，或者找出一个更适合具体情况的 threshold。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/" title="Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务">https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Spring/" rel="tag"><i class="fa fa-tag"></i> Spring</a>
+              <a href="/tags/Spring-Cloud/" rel="tag"><i class="fa fa-tag"></i> Spring Cloud</a>
+              <a href="/tags/Eureka/" rel="tag"><i class="fa fa-tag"></i> Eureka</a>
+              <a href="/tags/self-preservation/" rel="tag"><i class="fa fa-tag"></i> self preservation</a>
+              <a href="/tags/%E8%87%AA%E6%88%91%E4%BF%9D%E6%8A%A4%E6%A8%A1%E5%BC%8F/" rel="tag"><i class="fa fa-tag"></i> 自我保护模式</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/18/how-to-use-spring-security-acl/" rel="prev" title="如何使用 Spring Security ACL">
+      <i class="fa fa-chevron-left"></i> 如何使用 Spring Security ACL
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/15/cyclomatic-complexity/" rel="next" title="圈复杂度">
+      圈复杂度 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#幽灵出现"><span class="nav-number">1.</span> <span class="nav-text">幽灵出现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为什么这些服务没有注销？"><span class="nav-number">2.</span> <span class="nav-text">为什么这些服务没有注销？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#难道-Eureka-不会清理过期的注册信息吗？"><span class="nav-number">3.</span> <span class="nav-text">难道 Eureka 不会清理过期的注册信息吗？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自我保护模式"><span class="nav-number">4.</span> <span class="nav-text">自我保护模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">4.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自我保护的逻辑"><span class="nav-number">4.2.</span> <span class="nav-text">自我保护的逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Number-of-Renews-in-Last-Minute"><span class="nav-number">4.2.1.</span> <span class="nav-text">Number of Renews in Last Minute</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Number-of-Renews-per-Minute-Threshold"><span class="nav-number">4.2.2.</span> <span class="nav-text">Number of Renews per Minute Threshold</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Expected-Client-Renewal-Interval-Seconds"><span class="nav-number">4.2.2.1.</span> <span class="nav-text">Expected Client Renewal Interval Seconds</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Renewal-Percent-Threshold"><span class="nav-number">4.2.2.2.</span> <span class="nav-text">Renewal Percent Threshold</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Expected-Number-of-Clients-Sending-Renews"><span class="nav-number">4.2.2.3.</span> <span class="nav-text">Expected Number of Clients Sending Renews</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理一个幽灵服务的极限值"><span class="nav-number">4.3.</span> <span class="nav-text">处理一个幽灵服务的极限值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#验证"><span class="nav-number">4.3.1.</span> <span class="nav-text">验证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#12-个-client-会触发自我保护模式"><span class="nav-number">4.3.1.1.</span> <span class="nav-text">12 个 client 会触发自我保护模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#13-个-client-能够处理掉一个幽灵服务"><span class="nav-number">4.3.1.2.</span> <span class="nav-text">13 个 client 能够处理掉一个幽灵服务</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2020/07/25/eureka-self-preservation-mode/";
+    this.page.identifier = "2020/07/25/eureka-self-preservation-mode/";
+    this.page.title = "Eureka 中的幽灵 —— Self Preservation 导致的幽灵服务";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

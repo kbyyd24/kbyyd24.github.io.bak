@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本书第六章的读书笔记，也是我这个系列的最后一篇读书笔记。后面7、8、9章分别讲的“测试、调试与重构”、“设计和架构的原则”以及“使用Lambda表达式编写并发程序”，因为笔记不好整理，就不写了，感兴趣的同学自己买书来看吧。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="「Java 8 函数式编程」读书笔记——数据并行化">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="本书第六章的读书笔记，也是我这个系列的最后一篇读书笔记。后面7、8、9章分别讲的“测试、调试与重构”、“设计和架构的原则”以及“使用Lambda表达式编写并发程序”，因为笔记不好整理，就不写了，感兴趣的同学自己买书来看吧。">
+<meta property="article:published_time" content="2017-02-20T00:00:00.000Z">
+<meta property="article:modified_time" content="2017-02-20T00:00:00.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="lambda">
+<meta property="article:tag" content="Java Lambda">
+<meta property="article:tag" content="Java 8">
+<meta property="article:tag" content="函数式编程">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>「Java 8 函数式编程」读书笔记——数据并行化 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          「Java 8 函数式编程」读书笔记——数据并行化
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-20 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-20T00:00:00+00:00">2017-02-20</time>
+            </span>
+
+          
+            <span id="/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/" class="post-meta-item leancloud_visitors" data-flag-title="「Java 8 函数式编程」读书笔记——数据并行化" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>1.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本书第六章的读书笔记，也是我这个系列的最后一篇读书笔记。后面7、8、9章分别讲的“测试、调试与重构”、“设计和架构的原则”以及“使用<code>Lambda</code>表达式编写并发程序”，因为笔记不好整理，就不写了，感兴趣的同学自己买书来看吧。</p>
+<h1 id="并行化流操作"><a href="#并行化流操作" class="headerlink" title="并行化流操作"></a>并行化流操作</h1><p>关于<code>并行</code>与<code>并发</code>的区别和<code>并行</code>的重要性的讨论这里不做笔记了，直接看<code>Stream</code>类库提供了哪些关于并行的操作把。</p>
+<ul>
+<li>如果已经有了一个<code>Stream</code>对象，可以调用<code>parallel</code>方法使其拥有并行操作的能力；</li>
+<li>如果想从一个集合类创建一个<code>Stream</code>对象，可以调用<code>parallelStream</code>方法获得一个拥有并行能力的流。</li>
+<li><code>BaseStream</code>提供的<code>sequential</code>方法将会按顺序遍历<code>Stream</code>中的元素</li>
+</ul>
+<p>对于同一个<code>Stream</code>对象，如果<code>parallel</code>方法和<code>sequential</code>方法都被调用，最后调用的那个方法将起效，不能同时处于两种模式。</p>
+<p>使用并行流，不需要写代码用于处理调度和等待线程池中的某项任务完成，这些工作都交由类库完成。</p>
+<h1 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h1><p>编写并行流，存在一些与非并行流不一样的约定。</p>
+<h2 id="reduce方法的限制"><a href="#reduce方法的限制" class="headerlink" title="reduce方法的限制"></a><code>reduce</code>方法的限制</h2><h3 id="初值必须为组合函数的恒等值"><a href="#初值必须为组合函数的恒等值" class="headerlink" title="初值必须为组合函数的恒等值"></a>初值必须为组合函数的恒等值</h3><p>使用恒等值与其他值做<code>reduce</code>运算时，其他值保持不变。比如，使用<code>reduce</code>进行求和运算时，初值必须为<code>0</code>，而进行求积运算时，初值必须为<code>1</code></p>
+<h3 id="reduce操作必须符合结合律"><a href="#reduce操作必须符合结合律" class="headerlink" title="reduce操作必须符合结合律"></a><code>reduce</code>操作必须符合结合律</h3><p>因为并行计算时，元素的遍历顺序是不确定的，所以只有符合结合律才能保证结果是确定的。</p>
+<h2 id="避免持有锁"><a href="#避免持有锁" class="headerlink" title="避免持有锁"></a>避免持有锁</h2><p> 前面提到过，并行流的操作，是把线程的调度等工作交给了类库解决的，所以不要做持有锁的操作，否则是自找麻烦</p>
+<h1 id="性能"><a href="#性能" class="headerlink" title="性能"></a>性能</h1><h2 id="主要影响因素"><a href="#主要影响因素" class="headerlink" title="主要影响因素"></a>主要影响因素</h2><p>影响并行流的性能的因素主要有5个：</p>
+<ul>
+<li>数据大小</li>
+</ul>
+<p>因为并行处理会带来分解数据和合并数据的额外开销，所以只有当数据量足够大时使用并行流操作才具有意义，否则就是在浪费资源。</p>
+<ul>
+<li>源数据结构</li>
+</ul>
+<p>源数据通常是集合，而因为具体的类型不同，造成了分割时的开销不同。</p>
+<ul>
+<li>装箱</li>
+</ul>
+<p>基本数据类型比装箱类型处理更快。</p>
+<ul>
+<li>核的数量</li>
+</ul>
+<p>拥有的核数量越多，潜在的性能提升越大。但这里的核是指运行时进程能够使用的核的数量。</p>
+<ul>
+<li>单元处理开销</li>
+</ul>
+<p>花在每个元素上的处理时间越长，并行带来的性能提升越大。</p>
+<h2 id="底层框架"><a href="#底层框架" class="headerlink" title="底层框架"></a>底层框架</h2><p>并行流在底层沿用的<code>fork/join</code>框架，<code>fork</code>递归式的分解问题，然后每段并行执行，最终由<code>join</code>合并结果，返回最后的值。</p>
+<h2 id="数据结构分解的难易"><a href="#数据结构分解的难易" class="headerlink" title="数据结构分解的难易"></a>数据结构分解的难易</h2><p>数据结构对半分解的难易程度，决定了分解的效率。可以将核心类库提供的通用数据结构分为三类：</p>
+<ul>
+<li>性能好</li>
+</ul>
+<p><code>ArrayList</code>、<code>数组</code>或者<code>IntStream.range</code>这样的支持随机读取的结构，能够轻易的分解。</p>
+<ul>
+<li>性能一般</li>
+</ul>
+<p><code>HashSet</code>、<code>TreeSet</code>这样的数据结构不易公平的分解。</p>
+<ul>
+<li>性能差</li>
+</ul>
+<p>有的数据结构难于分解，有的结构可能需要花<code>O(N)</code>的时间复杂度来分解。比如：<code>LinkedList</code>，难以对半分解；<code>Streams.iterate</code>和<code>BufferedRead.lines</code>这样长度未知的数据结构也难以分解。</p>
+<h2 id="操作的状态"><a href="#操作的状态" class="headerlink" title="操作的状态"></a>操作的状态</h2><p>流中的操作，可以分为<strong>有状态</strong>和<strong>无状态</strong>。无状态的操作在整个操作中不必维护状态；有状态的操作则有维护状态所需的开销和限制。</p>
+<p>避开有状态的操作，可以获得更好的并行性能。无状态的操作包括<code>map</code>、<code>filter</code>和<code>flatMap</code>；有状态的操作包括<code>sorted</code>、<code>distinct</code>和<code>limit</code>。</p>
+<h1 id="并行化数组操作"><a href="#并行化数组操作" class="headerlink" title="并行化数组操作"></a>并行化数组操作</h1><p><code>Java 8</code>为数组提供了并行化操作的方法，这些方法在<code>Arrays</code>类中：</p>
+<table>
+<thead>
+<tr>
+<th align="center">method</th>
+<th align="center">description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">parallelPrefix</td>
+<td align="center">任意给定一个函数，计算数组的“和”（任意<code>BinaryOperator</code>）</td>
+</tr>
+<tr>
+<td align="center">parallelSetAll</td>
+<td align="center">使用<code>Lambda</code>表达式更新数组元素</td>
+</tr>
+<tr>
+<td align="center">parallelSort</td>
+<td align="center">并行化对数组元素排序</td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/" title="「Java 8 函数式编程」读书笔记——数据并行化">https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"><i class="fa fa-tag"></i> java</a>
+              <a href="/tags/lambda/" rel="tag"><i class="fa fa-tag"></i> lambda</a>
+              <a href="/tags/Java-Lambda/" rel="tag"><i class="fa fa-tag"></i> Java Lambda</a>
+              <a href="/tags/Java-8/" rel="tag"><i class="fa fa-tag"></i> Java 8</a>
+              <a href="/tags/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B/" rel="tag"><i class="fa fa-tag"></i> 函数式编程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/02/10/Java_8_Lambdas_Functional_Programming_Note_Collector/" rel="prev" title="「Java 8 函数式编程」读书笔记——高级集合类和收集器">
+      <i class="fa fa-chevron-left"></i> 「Java 8 函数式编程」读书笔记——高级集合类和收集器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2017/03/04/JavaScritp_The_Good_Parts_Object/" rel="next" title="「JavaScript 语言精粹」读书笔记--对象">
+      「JavaScript 语言精粹」读书笔记--对象 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#并行化流操作"><span class="nav-number">1.</span> <span class="nav-text">并行化流操作</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#限制"><span class="nav-number">2.</span> <span class="nav-text">限制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#reduce方法的限制"><span class="nav-number">2.1.</span> <span class="nav-text">reduce方法的限制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#初值必须为组合函数的恒等值"><span class="nav-number">2.1.1.</span> <span class="nav-text">初值必须为组合函数的恒等值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce操作必须符合结合律"><span class="nav-number">2.1.2.</span> <span class="nav-text">reduce操作必须符合结合律</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#避免持有锁"><span class="nav-number">2.2.</span> <span class="nav-text">避免持有锁</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#性能"><span class="nav-number">3.</span> <span class="nav-text">性能</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主要影响因素"><span class="nav-number">3.1.</span> <span class="nav-text">主要影响因素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#底层框架"><span class="nav-number">3.2.</span> <span class="nav-text">底层框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据结构分解的难易"><span class="nav-number">3.3.</span> <span class="nav-text">数据结构分解的难易</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作的状态"><span class="nav-number">3.4.</span> <span class="nav-text">操作的状态</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#并行化数组操作"><span class="nav-number">4.</span> <span class="nav-text">并行化数组操作</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/";
+    this.page.identifier = "2017/02/20/Java_8_Lambdas_Functional_Programming_Note_Parallel/";
+    this.page.title = "「Java 8 函数式编程」读书笔记——数据并行化";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

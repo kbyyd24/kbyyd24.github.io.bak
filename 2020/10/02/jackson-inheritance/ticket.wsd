@@ -1,0 +1,19 @@
+@startuml ticket
+
+abstract class Ticket {
+    +type: TicketType
+}
+
+class QuestionTicket {
+    +description: String
+}
+
+class BugReportingTicket {
+    +productName: String
+    +stepToReproduce: String
+}
+
+Ticket <|-- QuestionTicket
+Ticket <|-- BugReportingTicket
+
+@enduml

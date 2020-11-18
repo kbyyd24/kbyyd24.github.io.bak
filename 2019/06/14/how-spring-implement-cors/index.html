@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="作为一个后端开发，我们经常遇到的一个问题就是需要配置 CORS，好让我们的前端能够访问到我们的 API，并且不让其他人访问。而在 Spring 中，我们见过很多种 CORS 的配置，很多资料都只是告诉我们可以这样配置、可以那样配置，但是这些配置有什么区别？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring 里那么多种 CORS 的配置方式，到底有什么区别">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="作为一个后端开发，我们经常遇到的一个问题就是需要配置 CORS，好让我们的前端能够访问到我们的 API，并且不让其他人访问。而在 Spring 中，我们见过很多种 CORS 的配置，很多资料都只是告诉我们可以这样配置、可以那样配置，但是这些配置有什么区别？">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/filter-and-interceptor.png">
+<meta property="article:published_time" content="2019-06-14T22:14:37.000Z">
+<meta property="article:modified_time" content="2019-06-14T22:14:37.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Spring Security">
+<meta property="article:tag" content="cors">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/filter-and-interceptor.png">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>Spring 里那么多种 CORS 的配置方式，到底有什么区别 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          Spring 里那么多种 CORS 的配置方式，到底有什么区别
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-14 22:14:37" itemprop="dateCreated datePublished" datetime="2019-06-14T22:14:37+00:00">2019-06-14</time>
+            </span>
+
+          
+            <span id="/2019/06/14/how-spring-implement-cors/" class="post-meta-item leancloud_visitors" data-flag-title="Spring 里那么多种 CORS 的配置方式，到底有什么区别" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2019/06/14/how-spring-implement-cors/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/06/14/how-spring-implement-cors/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2019/06/14/how-spring-implement-cors/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2019/06/14/how-spring-implement-cors/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>14k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>26 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div class="paragraph">
+<p>作为一个后端开发，我们经常遇到的一个问题就是需要配置 <code>CORS</code>，好让我们的前端能够访问到我们的 API，并且不让其他人访问。而在 <code>Spring</code> 中，我们见过很多种 <code>CORS</code> 的配置，很多资料都只是告诉我们可以这样配置、可以那样配置，但是这些配置有什么区别？</p>
+</div>
+<div class="sect1">
+<h2 id="_cors_是什么">CORS 是什么</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>首先我们要明确，<code>CORS</code> 是什么，以及规范是如何要求的。这里只是梳理一下流程，具体的规范请看 <a href="https://www.w3.org/TR/cors/" target="_blank" rel="noopener">这里</a>。</p>
+</div>
+<div class="paragraph">
+<p><code>CORS</code> 全称是 <code>Cross-Origin Resource Sharing</code>，直译过来就是跨域资源共享。要理解这个概念就需要知道<strong>域</strong>、<strong>资源</strong>和<strong>同源策略</strong>这三个概念。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>域，指的是一个站点，由 <code>protocal</code>、<code>host</code> 和 <code>port</code> 三部分组成，其中 <code>host</code> 可以是域名，也可以是 <code>ip</code> ；<code>port</code> 如果没有指明，则是使用 <code>protocal</code> 的默认端口</p>
+</li>
+<li>
+<p>资源，是指一个 <code>URL</code> 对应的内容，可以是一张图片、一种字体、一段 <code>HTML</code> 代码、一份 <code>JSON</code> 数据等等任何形式的任何内容</p>
+</li>
+<li>
+<p>同源策略，指的是为了防止 <code>XSS</code>，浏览器、客户端应该仅请求与当前页面来自同一个域的资源，请求其他域的资源需要通过验证。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>了解了这三个概念，我们就能理解为什么有 <code>CORS</code> 规范了：从站点 A 请求站点 B 的资源的时候，由于浏览器的同源策略的影响，这样的跨域请求将被禁止发送；为了让跨域请求能够正常发送，我们需要一套机制在不破坏同源策略的安全性的情况下、允许跨域请求正常发送，这样的机制就是 <code>CORS</code>。</p>
+</div>
+<div class="sect2">
+<h3 id="_预检请求">预检请求</h3>
+<div class="paragraph">
+<p>在 <code>CORS</code> 中，定义了一种预检请求，即 <code>preflight request</code>，当实际请求不是一个 <code>简单请求</code> 时，会发起一次预检请求。预检请求是针对实际请求的 URL 发起一次 <code>OPTIONS</code> 请求，并带上下面三个 <code>headers</code> ：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Origin</code>：值为当前页面所在的域，用于告诉服务器当前请求的域。如果没有这个 <code>header</code>，服务器将不会进行 <code>CORS</code> 验证。</p>
+</li>
+<li>
+<p><code>Access-Control-Request-Method</code>：值为实际请求将会使用的方法</p>
+</li>
+<li>
+<p><code>Access-Control-Request-Headers</code>：值为实际请求将会使用的 <code>header</code> 集合</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>如果服务器端 <code>CORS</code> 验证失败，则会返回客户端错误，即 <code>4xx</code> 的状态码。</p>
+</div>
+<div class="paragraph">
+<p>否则，将会请求成功，返回 <code>200</code> 的状态码，并带上下面这些 <code>headers</code>：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Access-Control-Allow-Origin</code>：允许请求的域，多数情况下，就是预检请求中的 <code>Origin</code> 的值</p>
+</li>
+<li>
+<p><code>Access-Control-Allow-Credentials</code>：一个布尔值，表示服务器是否允许使用 <code>cookies</code></p>
+</li>
+<li>
+<p><code>Access-Control-Expose-Headers</code>：实际请求中可以出现在响应中的 <code>headers</code> 集合</p>
+</li>
+<li>
+<p><code>Access-Control-Max-Age</code>：预检请求返回的规则可以被缓存的最长时间，超过这个时间，需要再次发起预检请求</p>
+</li>
+<li>
+<p><code>Access-Control-Allow-Methods</code>：实际请求中可以使用到的方法集合</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>浏览器会根据预检请求的响应，来决定是否发起实际请求。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_小结">小结</h3>
+<div class="paragraph">
+<p>到这里， 我们就知道了跨域请求会经历的故事：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>访问另一个域的资源</p>
+</li>
+<li>
+<p>有可能会发起一次预检请求（非简单请求，或超过了 <code>Max-Age</code>）</p>
+</li>
+<li>
+<p>发起实际请求</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>接下来，我们看看在 Spring 中，我们是如何让 <code>CORS</code> 机制在我们的应用中生效的。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_几种配置的方式">几种配置的方式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring 提供了多种配置 <code>CORS</code> 的方式，有的方式针对单个 API，有的方式可以针对整个应用；有的方式在一些情况下是等效的，而在另一些情况下却又出现不同。我们这里例举几种典型的方式来看看应该如何配置。</p>
+</div>
+<div class="paragraph">
+<p>假设我们有一个 API：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@RestController</span>
+<span class="class"><span class="keyword">class</span> <span class="title">HelloController</span> </span>&#123;
+    <span class="meta">@GetMapping(<span class="meta-string">"hello"</span>)</span>
+    <span class="function"><span class="keyword">fun</span> <span class="title">hello</span><span class="params">()</span></span>: String &#123;
+        <span class="keyword">return</span> <span class="string">"Hello, CORS!"</span>
+    &#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_crossorigin_注解"><code>@CrossOrigin</code> 注解</h3>
+<div class="paragraph">
+<p>使用`@CorssOrigin` 注解需要引入 <code>Spring Web</code> 的依赖，该注解可以作用于方法或者类，可以针对这个方法或类对应的一个或多个 API 配置 <code>CORS</code> 规则：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@RestController</span>
+<span class="class"><span class="keyword">class</span> <span class="title">HelloController</span> </span>&#123;
+    <span class="meta">@GetMapping(<span class="meta-string">"hello"</span>)</span>
+    <span class="meta">@CrossOrigin(origins = [<span class="meta-string">"http://localhost:8080"</span>])</span>
+    <span class="function"><span class="keyword">fun</span> <span class="title">hello</span><span class="params">()</span></span>: String &#123;
+        <span class="keyword">return</span> <span class="string">"Hello, CORS!"</span>
+    &#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_实现_webmvcconfigurer_addcorsmappings_方法">实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法</h3>
+<div class="paragraph">
+<p><code>WebMvcConfigurer</code> 是一个接口，它同样来自于 <code>Spring Web</code>。我们可以通过实现它的 <code>addCorsMappings</code> 方法来针对全局 API 配置 <code>CORS</code> 规则：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@Configuration</span>
+<span class="meta">@EnableWebMvc</span>
+<span class="class"><span class="keyword">class</span> <span class="title">MvcConfig</span>: <span class="type">WebMvcConfigurer &#123;</span></span>
+    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">addCorsMappings</span><span class="params">(registry: <span class="type">CorsRegistry</span>)</span></span> &#123;
+        registry.addMapping(<span class="string">"/hello"</span>)
+                .allowedOrigins(<span class="string">"http://localhost:8080"</span>)
+    &#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_注入_corsfilter">注入 <code>CorsFilter</code></h3>
+<div class="paragraph">
+<p><code>CorsFilter</code> 同样来自于 <code>Spring Web</code>，但是实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法并不会使用到这个类，具体原因我们后面来分析。我们可以通过注入一个 <code>CorsFilter</code> 来使用它：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@Configuration</span>
+<span class="class"><span class="keyword">class</span> <span class="title">CORSConfiguration</span> </span>&#123;
+    <span class="meta">@Bean</span>
+    <span class="function"><span class="keyword">fun</span> <span class="title">corsFilter</span><span class="params">()</span></span>: CorsFilter &#123;
+        <span class="keyword">val</span> configuration = CorsConfiguration()
+        configuration.allowedOrigins = listOf(<span class="string">"http://localhost:8080"</span>)
+        <span class="keyword">val</span> source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration(<span class="string">"/hello"</span>, configuration)
+        <span class="keyword">return</span> CorsFilter(source)
+    &#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>注入 <code>CorsFilter</code> 不止这一种方式，我们还可以通过注入一个 <code>FilterRegistrationBean</code> 来实现，这里就不给例子了。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>在仅仅引入 <code>Spring Web</code> 的情况下，实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法和注入 <code>CorsFilter</code> 这两种方式可以达到同样的效果，二选一即可。它们的区别会在引入 <code>Spring Security</code> 之后会展现出来，我们后面再来分析。</p>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_security_中的配置">Spring Security 中的配置</h3>
+<div class="paragraph">
+<p>在引入了 <code>Spring Security</code> 之后，我们会发现前面的方法都不能正确的配置 <code>CORS</code>，每次 <code>preflight request</code> 都会得到一个 <code>401</code> 的状态码，表示请求没有被授权。这时，我们需要增加一点配置才能让 <code>CORS</code> 正常工作：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@Configuration</span>
+<span class="class"><span class="keyword">class</span> <span class="title">SecurityConfig</span> : <span class="type">WebSecurityConfigurerAdapter</span></span>() &#123;
+    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">configure</span><span class="params">(http: <span class="type">HttpSecurity</span>?)</span></span> &#123;
+        http?.cors()
+    &#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>或者，干脆不实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法或者注入 <code>CorsFilter</code> ，而是注入一个 <code>CorsConfigurationSource</code> ，同样能与上面的代码配合，正确的配置 <code>CORS</code>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-kotlin" data-lang="kotlin"><pre><code class="highlight kotlin"><span class="meta">@Bean</span>
+<span class="function"><span class="keyword">fun</span> <span class="title">corsConfigurationSource</span><span class="params">()</span></span>: CorsConfigurationSource &#123;
+    <span class="keyword">val</span> configuration = CorsConfiguration()
+    configuration.allowedOrigins = listOf(<span class="string">"http://localhost:8080"</span>)
+    <span class="keyword">val</span> source = UrlBasedCorsConfigurationSource()
+    source.registerCorsConfiguration(<span class="string">"/hello"</span>, configuration)
+    <span class="keyword">return</span> source
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<hr>
+<div class="paragraph">
+<p>到此，我们已经看过了几种典型的例子了，完整的内容可以在 <a href="https://github.com/kbyyd24/spring-cors-practice" target="_blank" rel="noopener">Demo</a> 中查看，我们接下来看看 Spring 到底是如何实现 <code>CORS</code> 验证的。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_这些配置有什么区别">这些配置有什么区别</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>我们会主要分析实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法和调用 <code>HttpSecurity.cors</code> 方法这两种方式是如何实现 <code>CORS</code> 的，但在进行之前，我们要先复习一下 <code>Filter</code> 与 <code>Interceptor</code> 的概念。</p>
+</div>
+<div class="sect2">
+<h3 id="_filter_与_interceptor">Filter 与 Interceptor</h3>
+<div class="imageblock center">
+<div class="content">
+<img src="filter-and-interceptor.png" alt="filter and interceptor">
+</div>
+</div>
+<div class="paragraph">
+<p>上图很形象的说明了 <code>Filter</code> 与 <code>Interceptor</code> 的区别，一个作用在 <code>DispatcherServlet</code> 调用前，一个作用在调用后。</p>
+</div>
+<div class="paragraph">
+<p>但实际上，它们本身并没有任何关系，是完全独立的概念。</p>
+</div>
+<div class="paragraph">
+<p><code>Filter</code> 由 <code>Servlet</code> 标准定义，要求 <code>Filter</code> 需要在 <code>Servlet</code> 被调用之前调用，作用顾名思义，就是用来过滤请求。在 <code>Spring Web</code> 应用中，<code>DispatcherServlet</code> 就是唯一的 <code>Servlet</code> 实现。</p>
+</div>
+<div class="paragraph">
+<p><code>Interceptor</code> 由 Spring 自己定义，由 <code>DispatcherServlet</code> 调用，可以定义在 <code>Handler</code> 调用前后的行为。这里的 <code>Handler</code> ，在多数情况下，就是我们的 <code>Controller</code> 中对应的方法。</p>
+</div>
+<div class="paragraph">
+<p>对于 <code>Filter</code> 和 <code>Interceptor</code> 的复习就到这里，我们只需要知道它们会在什么时候被调用到，就能理解后面的内容了。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_webmvcconfigurer_addcorsmappings_方法做了什么"><code>WebMvcConfigurer.addCorsMappings</code> 方法做了什么</h3>
+<div class="paragraph">
+<p>我们从 <code>WebMvcConfigurer.addCorsMappings</code> 方法的参数开始，先看看 <code>CORS</code> 配置是如何保存到 Spring 上下文中的，然后在了解一下 Spring 是如何使用的它们。</p>
+</div>
+<div class="sect3">
+<h4 id="_注入_cors_配置">注入 CORS 配置</h4>
+<div class="sect4">
+<h5 id="_corsregistry_和_corsregistration">CorsRegistry 和 CorsRegistration</h5>
+<div class="paragraph">
+<p><code>WebMvcConfigurer.addCorsMappings</code> 方法的参数 <code>CorsRegistry</code> 用于注册 <code>CORS</code> 配置，它的源码如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CorsRegistry</span> </span>&#123;
+	<span class="keyword">private</span> <span class="keyword">final</span> List&lt;CorsRegistration&gt; registrations = <span class="keyword">new</span> ArrayList&lt;&gt;();
+
+	<span class="function"><span class="keyword">public</span> CorsRegistration <span class="title">addMapping</span><span class="params">(String pathPattern)</span> </span>&#123;
+		CorsRegistration registration = <span class="keyword">new</span> CorsRegistration(pathPattern);
+		<span class="keyword">this</span>.registrations.add(registration);
+		<span class="keyword">return</span> registration;
+	&#125;
+
+	<span class="function"><span class="keyword">protected</span> Map&lt;String, CorsConfiguration&gt; <span class="title">getCorsConfigurations</span><span class="params">()</span> </span>&#123;
+		Map&lt;String, CorsConfiguration&gt; configs = <span class="keyword">new</span> LinkedHashMap&lt;&gt;(<span class="keyword">this</span>.registrations.size());
+		<span class="keyword">for</span> (CorsRegistration registration : <span class="keyword">this</span>.registrations) &#123;
+			configs.put(registration.getPathPattern(), registration.getCorsConfiguration());
+		&#125;
+		<span class="keyword">return</span> configs;
+	&#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>我们发现这个类仅仅有两个方法：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>addMapping</code> 接收一个 <code>pathPattern</code>，创建一个 <code>CorsRegistration</code> 实例，保存到列表后将其返回。在我们的代码中，这里的 <code>pathPattern</code> 就是 <code>/hello</code></p>
+</li>
+<li>
+<p><code>getCorsConfigurations</code> 方法将保存的 <code>CORS</code> 规则转换成 <code>Map</code> 后返回</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>CorsRegistration</code> 这个类，同样很简单，我们看看它的部分源码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CorsRegistration</span> </span>&#123;
+	<span class="keyword">private</span> <span class="keyword">final</span> String pathPattern;
+	<span class="keyword">private</span> <span class="keyword">final</span> CorsConfiguration config;
+
+	<span class="function"><span class="keyword">public</span> <span class="title">CorsRegistration</span><span class="params">(String pathPattern)</span> </span>&#123;
+		<span class="keyword">this</span>.pathPattern = pathPattern;
+		<span class="keyword">this</span>.config = <span class="keyword">new</span> CorsConfiguration().applyPermitDefaultValues();
+	&#125;
+
+	<span class="function"><span class="keyword">public</span> CorsRegistration <span class="title">allowedOrigins</span><span class="params">(String... origins)</span> </span>&#123;
+		<span class="keyword">this</span>.config.setAllowedOrigins(Arrays.asList(origins));
+		<span class="keyword">return</span> <span class="keyword">this</span>;
+	&#125;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>不难发现，这个类仅仅保存了一个 <code>pathPattern</code> 字符串和 <code>CorsConfiguration</code>，很好理解，它保存的是一个 <code>pathPattern</code> 对应的 <code>CORS</code> 规则。</p>
+</div>
+<div class="paragraph">
+<p>在它的构造函数中，调用的 <code>CorsConfiguration.applyPermitDefaultValues</code> 方法则用于配置默认的 <code>CORS</code> 规则：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>allowedOrigins 默认为所有域</p>
+</li>
+<li>
+<p>allowedMethods 默认为 <code>GET</code> 、<code>HEAD</code> 和 <code>POST</code></p>
+</li>
+<li>
+<p>allowedHeaders 默认为所有</p>
+</li>
+<li>
+<p>maxAge 默认为 30 分钟</p>
+</li>
+<li>
+<p>exposedHeaders 默认为 null，也就是不暴露任何 header</p>
+</li>
+<li>
+<p>credentials 默认为 null</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>创建 <code>CorsRegistration</code> 后，我们可以通过它的 <code>allowedOrigins</code>、<code>allowedMethods</code> 等方法修改它的 <code>CorsConfiguration</code>，覆盖掉上面的默认值。</p>
+</div>
+<div class="paragraph">
+<p>现在，我们已经通过 <code>WebMvcConfigurer.addCorsMappings</code> 方法配置好 <code>CorsRegistry</code> 了，接下来看看这些配置会在什么地方被注入到 Spring 上下文中。</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_webmvcconfigurationsupport">WebMvcConfigurationSupport</h5>
+<div class="paragraph">
+<p><code>CorsRegistry.getCorsConfigurations</code> 方法，会被 <code>WebMvcConfigurationSupport.getConfigurations</code> 方法调用，这个方法如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> Map&lt;String, CorsConfiguration&gt; <span class="title">getCorsConfigurations</span><span class="params">()</span> </span>&#123;
+	<span class="keyword">if</span> (<span class="keyword">this</span>.corsConfigurations == <span class="keyword">null</span>) &#123;
+		CorsRegistry registry = <span class="keyword">new</span> CorsRegistry();
+		addCorsMappings(registry);
+		<span class="keyword">this</span>.corsConfigurations = registry.getCorsConfigurations();
+	&#125;
+	<span class="keyword">return</span> <span class="keyword">this</span>.corsConfigurations;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><code>addCorsMappings(registry)</code> 调用的是自己的方法，由子类 <code>DelegatingWebMvcConfiguration</code> 通过委托的方式调用到 <code>WebMvcConfigurer.addCorsMappings</code> 方法，我们的配置也由此被读取到。</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p><code>getCorsConfigurations</code> 是一个 <code>protected</code> 方法，是为了在扩展该类时，仍然能够直接获取到 <code>CORS</code> 配置。而这个方法在这个类里被四个地方调用到，这四个调用的地方，都是为了注册一个 <code>HandlerMapping</code> 到 Spring 容器中。每一个地方都会调用 <code>mapping.setCorsConfigurations</code> 方法来接收 <code>CORS</code> 配置，而这个 <code>setCorsConfigurations</code> 方法，则由 <code>AbstractHandlerMapping</code> 提供，<code>CorsConfigurations</code> 也被保存在这个抽象类中。</p>
+</div>
+<div class="paragraph">
+<p>到此，我们的 <code>CORS</code> 配置借由 <code>AbstractHandlerMapping</code> 被注入到了多个 <code>HandlerMapping</code> 中，而这些 <code>HandlerMapping</code> 以 Spring 组件的形式被注册到了 Spring 容器中，当请求来临时，将会被调用。</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_获取_cors_配置">获取 CORS 配置</h4>
+<div class="paragraph">
+<p>还记得前面关于 <code>Filter</code> 和 <code>Interceptor</code> 那张图吗？当请求来到 <code>Spring Web</code> 时，一定会到达 <code>DispatcherServlet</code> 这个唯一的 <code>Servlet</code>。</p>
+</div>
+<div class="paragraph">
+<p>在 <code>DispatcherServlet.doDispatch</code> 方法中，会调用所有 <code>HandlerMapping.getHandler</code> 方法。好巧不巧，这个方法又是由 <code>AbstractHandlerMapping</code> 实现的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="meta">@Override</span>
+<span class="meta">@Nullable</span>
+<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> HandlerExecutionChain <span class="title">getHandler</span><span class="params">(HttpServletRequest request)</span> <span class="keyword">throws</span> Exception </span>&#123;
+	<span class="comment">// 省略代码</span>
+	<span class="keyword">if</span> (CorsUtils.isCorsRequest(request)) &#123;
+		CorsConfiguration globalConfig = <span class="keyword">this</span>.corsConfigurationSource.getCorsConfiguration(request);
+		CorsConfiguration handlerConfig = getCorsConfiguration(handler, request);
+		CorsConfiguration config = (globalConfig != <span class="keyword">null</span> ? globalConfig.combine(handlerConfig) : handlerConfig);
+		executionChain = getCorsHandlerExecutionChain(request, executionChain, config);
+	&#125;
+	<span class="keyword">return</span> executionChain;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在这个方法中，关于 <code>CORS</code> 的部分都在这个 <code>if</code> 中。我们来看看最后这个 <code>getCorsHandlerExecutionChain</code> 做了什么：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">protected</span> HandlerExecutionChain <span class="title">getCorsHandlerExecutionChain</span><span class="params">(HttpServletRequest request,</span></span>
+<span class="function"><span class="params">		HandlerExecutionChain chain, @Nullable CorsConfiguration config)</span> </span>&#123;
+	<span class="keyword">if</span> (CorsUtils.isPreFlightRequest(request)) &#123;
+		HandlerInterceptor[] interceptors = chain.getInterceptors();
+		chain = <span class="keyword">new</span> HandlerExecutionChain(<span class="keyword">new</span> PreFlightHandler(config), interceptors);
+	&#125;
+	<span class="keyword">else</span> &#123;
+		chain.addInterceptor(<span class="keyword">new</span> CorsInterceptor(config));
+	&#125;
+	<span class="keyword">return</span> chain;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>可以看到：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>针对 <code>preflight request</code>，由于不会有对应的 <code>Handler</code> 来处理，所以这里就创建了一个 <code>PreFlightHandler</code> 来作为这次请求的 <code>handler</code></p>
+</li>
+<li>
+<p>对于其他的跨域请求，因为会有对应的 <code>handler</code>，所以就在 <code>handlerExecutionChain</code> 中加入一个 <code>CorsInterceptor</code> 来进行 <code>CORS</code> 验证</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>这里的 <code>PreFlightHandler</code> 和 <code>CorsInterceptor</code> 都是 <code>AbstractHandlerMapping</code> 的内部类，实现几乎一致，区别仅仅在于一个是 <code>HttpRequestHandler</code>，一个是 <code>HandlerInterceptor</code>；它们对 <code>CORS</code> 规则的验证都交由 <code>CorsProcessor</code> 接口完成，这里采用了默认实现 <code>DefaultCorsProcessor</code> 。</p>
+</div>
+<div class="paragraph">
+<p><code>DefaultCorsProcessor</code> 则是依照 <code>CORS</code> 标准来实现，并在验证失败的时候打印 <code>debug</code> 日志并拒绝请求。我们只需要关注一下标准中没有定义的验证失败时的状态码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">rejectRequest</span><span class="params">(ServerHttpResponse response)</span> <span class="keyword">throws</span> IOException </span>&#123;
+	response.setStatusCode(HttpStatus.FORBIDDEN);
+	response.getBody().write(<span class="string">"Invalid CORS request"</span>.getBytes(StandardCharsets.UTF_8));
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>CORS</code> 验证失败时调用这个方法，并设置状态码为 <code>403</code>。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_小结_2">小结</h4>
+<div class="paragraph">
+<p>通过对源码的研究，我们发现实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法的方式配置 <code>CORS</code>，会在 <code>Interceptor</code> 或者 <code>Handler</code> 层进行 <code>CORS</code> 验证。</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_htttpsecurity_cors_方法做了什么"><code>HtttpSecurity.cors</code> 方法做了什么</h3>
+<div class="paragraph">
+<p>在研究这个方法的行为之前，我们先来回想一下，我们调用这个方法解决的是什么问题。</p>
+</div>
+<div class="paragraph">
+<p>前面我们通过某种方式配置好 <code>CORS</code> 后，引入 <code>Spring Security</code>，<code>CORS</code> 就失效了，直到调用这个方法后，<code>CORS</code> 规则才重新生效。</p>
+</div>
+<div class="paragraph">
+<p>下面这些原因，导致了 <code>preflight request</code> 无法通过身份验证，从而导致 <code>CORS</code> 失效：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>preflight request</code> 不会携带认证信息</p>
+</li>
+<li>
+<p><code>Spring Security</code> 通过 <code>Filter</code> 来进行身份验证</p>
+</li>
+<li>
+<p><code>Interceptor</code> 和 <code>HttpRequestHanlder</code> 在 <code>DispatcherServlet</code> 之后被调用</p>
+</li>
+<li>
+<p><code>Spring Security</code> 中的 <code>Filter</code> 优先级比我们注入的 <code>CorsFilter</code> 优先级高</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>接下来我们就来看看 <code>HttpSecurity.cors</code> 方法是如何解决这个问题的。</p>
+</div>
+<div class="sect3">
+<h4 id="_corsconfigurer_如何配置_cors_规则">CorsConfigurer 如何配置 CORS 规则</h4>
+<div class="paragraph">
+<p><code>HttpSecurity.cors</code> 方法中其实只有一行代码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">public</span> CorsConfigurer&lt;HttpSecurity&gt; <span class="title">cors</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;
+	<span class="keyword">return</span> getOrApply(<span class="keyword">new</span> CorsConfigurer&lt;&gt;());
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里调用的 <code>getOrApply</code> 方法会将 <code>SecurityConfigurerAdapter</code> 的子类实例加入到它的父类 <code>AbstractConfiguredSecurityBuilder</code> 维护的一个 <code>Map</code> 中，然后一个个的调用 <code>configure</code> 方法。所以，我们来关注一下 <code>CorsConfigurer.configure</code> 方法就好了。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="meta">@Override</span>
+<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(H http)</span> <span class="keyword">throws</span> Exception </span>&#123;
+	ApplicationContext context = http.getSharedObject(ApplicationContext<span class="class">.<span class="keyword">class</span>)</span>;
+
+	CorsFilter corsFilter = getCorsFilter(context);
+	<span class="keyword">if</span> (corsFilter == <span class="keyword">null</span>) &#123;
+		<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(
+				<span class="string">"Please configure either a "</span> + CORS_FILTER_BEAN_NAME + <span class="string">" bean or a "</span>
+						+ CORS_CONFIGURATION_SOURCE_BEAN_NAME + <span class="string">"bean."</span>);
+	&#125;
+	http.addFilter(corsFilter);
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这段代码很好理解，就是在当前的 Spring Context 中找到一个 <code>CorsFilter</code>，然后将它加入到 <code>http</code> 对象的 <code>filters</code> 中。由上面的 <code>HttpSecurity.cors</code> 方法可知，这里的 <code>http</code> 对象实际类型就是 <code>HttpSecurity</code>。</p>
+</div>
+<div class="sect4">
+<h5 id="_getcorsfilter_方法做了什么">getCorsFilter 方法做了什么</h5>
+<div class="paragraph">
+<p>也许你会好奇，<code>HttpSecurity</code> 要如何保证 <code>CorsFilter</code> 一定在 <code>Spring Security</code> 的 <code>Filters</code> 之前调用。但是在研究这个之前，我们先来看看同样重要的 <code>getCorsFilter</code> 方法，这里可以解答我们前面的一些疑问。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">private</span> CorsFilter <span class="title">getCorsFilter</span><span class="params">(ApplicationContext context)</span> </span>&#123;
+	<span class="keyword">if</span> (<span class="keyword">this</span>.configurationSource != <span class="keyword">null</span>) &#123;
+		<span class="keyword">return</span> <span class="keyword">new</span> CorsFilter(<span class="keyword">this</span>.configurationSource);
+	&#125;
+
+	<span class="keyword">boolean</span> containsCorsFilter = context
+			.containsBeanDefinition(CORS_FILTER_BEAN_NAME);
+	<span class="keyword">if</span> (containsCorsFilter) &#123;
+		<span class="keyword">return</span> context.getBean(CORS_FILTER_BEAN_NAME, CorsFilter<span class="class">.<span class="keyword">class</span>)</span>;
+	&#125;
+
+	<span class="keyword">boolean</span> containsCorsSource = context
+			.containsBean(CORS_CONFIGURATION_SOURCE_BEAN_NAME);
+	<span class="keyword">if</span> (containsCorsSource) &#123;
+		CorsConfigurationSource configurationSource = context.getBean(
+				CORS_CONFIGURATION_SOURCE_BEAN_NAME, CorsConfigurationSource<span class="class">.<span class="keyword">class</span>)</span>;
+		<span class="keyword">return</span> <span class="keyword">new</span> CorsFilter(configurationSource);
+	&#125;
+
+	<span class="keyword">boolean</span> mvcPresent = ClassUtils.isPresent(HANDLER_MAPPING_INTROSPECTOR,
+			context.getClassLoader());
+	<span class="keyword">if</span> (mvcPresent) &#123;
+		<span class="keyword">return</span> MvcCorsFilter.getMvcCorsFilter(context);
+	&#125;
+	<span class="keyword">return</span> <span class="keyword">null</span>;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这是 <code>CorsConfigurer</code> 寻找 <code>CorsFilter</code> 的全部逻辑，我们用人话来说就是：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>CorsConfigurer</code> 自己是否有配置 <code>CorsConfigurationSource</code>，如果有的话，就用它创建一个 <code>CorsFilter</code>。</p>
+</li>
+<li>
+<p>在当前的上下文中，是否存在一个名为 <code>corsFilter</code> 的实例，如果有的话，就把他当作一个 <code>CorsFilter</code> 来用。</p>
+</li>
+<li>
+<p>在当前的上下文中，是否存在一个名为 <code>corsConfigurationSource</code> 的 <code>CorsConfigurationSource</code> 实例，如果有的话，就用它创建一个 <code>CorsFilter</code>。</p>
+</li>
+<li>
+<p>在当前上下文的类加载器中，是否存在类 <code>HandlerMappingIntrospector</code>，如果有的话，则通过 <code>MvcCorsFilter</code> 这个内部类创建一个 <code>CorsFilter</code>。</p>
+</li>
+<li>
+<p>如果没有找到，那就返回一个 <code>null</code>，调用的地方最后会抛出异常，阻止 Spring 初始化。</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>上面的第 2、3、4 步能解答我们前面的配置为什么生效，以及它们的区别。</p>
+</div>
+<div class="paragraph">
+<p>注册 <code>CorsFilter</code> 的方式，这个 <code>Filter</code> 最终会被直接注册到 Servlet container 中被使用到。</p>
+</div>
+<div class="paragraph">
+<p>注册 <code>CorsConfigurationSource</code> 的方式，会用这个 <code>source</code> 创建一个 <code>CorsFiltet</code> 然后注册到 Servlet container 中被使用到。</p>
+</div>
+<div class="paragraph">
+<p>而第四步的情况比较复杂。<code>HandlerMappingIntrospector</code> 是 <code>Spring Web</code> 提供的一个类，实现了 <code>CorsConfigurationSource</code> 接口，所以在 <code>MvcCorsFilter</code> 中，它被直接用于创建 <code>CorsFilter</code>。它实现的 <code>getCorsConfiguration</code> 方法，会经历：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>遍历 <code>HandlerMapping</code></p>
+</li>
+<li>
+<p>调用 <code>getHandler</code> 方法得到 <code>HandlerExecutionChain</code></p>
+</li>
+<li>
+<p>从中找到 <code>CorsConfigurationSource</code> 的实例</p>
+</li>
+<li>
+<p>调用这个实例的 <code>getCorsConfiguration</code> 方法，返回得到的 <code>CorsConfiguration</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>所以得到的 <code>CorsConfigurationSource</code> 实例，实际上就是前面讲到的 <code>CorsInterceptor</code> 或者 <code>PreFlightHandler</code>。</p>
+</div>
+<div class="paragraph">
+<p>所以第四步实际上匹配的是实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法的方式。</p>
+</div>
+<div class="paragraph">
+<p>由于在 <code>CorsFilter</code> 中每次处理请求时都会调用 <code>CorsConfigurationSource.getCorsConfiguration</code> 方法，而 <code>DispatcherServlet</code> 中也会每次调用 <code>HandlerMapping.getHandler</code> 方法，再加上这时的 <code>HandlerExecutionChain</code> 中还有 <code>CorsInterceptor</code>，所以使用这个方式相对于其他方式，做了很多重复的工作。所以 <code>WebMvcConfigurer.addCorsMappings</code> + <code>HttpSecurity.cors</code> 的方式降低了我们代码的效率，也许微乎其微，但能避免的情况下，还是不要使用。</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_httpsecurity_中的_filters_属性">HttpSecurity 中的 filters 属性</h4>
+<div class="paragraph">
+<p>在 <code>CorsConfigurer.configure</code> 方法中调用的 <code>HttpSecurity.addFilter</code> 方法，由它的父类 <code>HttpSecurityBuilder</code> 声明，并约定了很多 <code>Filter</code> 的顺序。然而 <code>CorsFilter</code> 并不在其中。不过在 <code>Spring Security</code> 中，目前还只有 <code>HttpSecurity</code> 这一个实现，所以我们来看看这里的代码实现就知道 <code>CorsFilter</code> 会排在什么地方了。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">public</span> HttpSecurity <span class="title">addFilter</span><span class="params">(Filter filter)</span> </span>&#123;
+	Class&lt;? extends Filter&gt; filterClass = filter.getClass();
+	<span class="keyword">if</span> (!comparator.isRegistered(filterClass)) &#123;
+		<span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"..."</span>);
+	&#125;
+	<span class="keyword">this</span>.filters.add(filter);
+	<span class="keyword">return</span> <span class="keyword">this</span>;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>我们可以看到，<code>Filter</code> 会被直接加到 <code>List</code> 中，而不是按照一定的顺序来加入的。但同时，我们也发现了一个 <code>comparator</code> 对象，并且只有被注册到了该类的 <code>Filter</code> 才能被加入到 <code>filters</code> 属性中。这个 <code>comparator</code> 又是用来做什么的呢？</p>
+</div>
+<div class="paragraph">
+<p>在 Spring Security 创建过程中，会调用到 <code>HttpSeciryt.performBuild</code> 方法，在这里我们可以看到 <code>filters</code> 和 <code>comparator</code> 是如何被使用到的。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="function"><span class="keyword">protected</span> DefaultSecurityFilterChain <span class="title">performBuild</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;
+	Collections.sort(filters, comparator);
+	<span class="keyword">return</span> <span class="keyword">new</span> DefaultSecurityFilterChain(requestMatcher, filters);
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>可以看到，Spring Security 使用了这个 <code>comparator</code> 在获取 <code>SecurityFilterChain</code> 的时候来保证 <code>filters</code> 的顺序，所以，研究这个 <code>comparator</code> 就能知道在 <code>SecurityFilterChain</code> 中的那些 <code>Filter</code> 的顺序是如何的了。</p>
+</div>
+<div class="paragraph">
+<p>这个 <code>comparator</code> 的类型是 <code>FilterComparator</code> ，从名字就能看出来是专用于 <code>Filter</code> 比较的类，它的实现也并不神秘，从构造函数就能猜到是如何实现的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java">FilterComparator() &#123;
+	Step order = <span class="keyword">new</span> Step(INITIAL_ORDER, ORDER_STEP);
+	put(ChannelProcessingFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+	put(ConcurrentSessionFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+	put(WebAsyncManagerIntegrationFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+	put(SecurityContextPersistenceFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+	put(HeaderWriterFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+	put(CorsFilter<span class="class">.<span class="keyword">class</span>, <span class="title">order</span>.<span class="title">next</span>())</span>;
+  <span class="comment">// 省略代码</span>
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>可以看到 <code>CorsFilter</code> 排在了第六位，在所有的 Security Filter 之前，由此便解决了 <code>preflight request</code> 没有携带认证信息的问题。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_小结_3">小结</h4>
+<div class="paragraph">
+<p>引入 <code>Spring Security</code> 之后，我们的 <code>CORS</code> 验证实际上是依然运行着的，只是因为 <code>preflight request</code> 不会携带认证信息，所以无法通过身份验证。使用 <code>HttpSecurity.cors</code> 方法会帮助我们在当前的 Spring Context 中找到或创建一个 <code>CorsFilter</code> 并安排在身份验证的 <code>Filter</code> 之前，以保证能对 <code>preflight request</code> 正确处理。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_总结">总结</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>研究了 Spring 中 CORS 的代码，我们了解到了这样一些知识：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>实现 <code>WebMvcConfigurer.addCorsMappings</code> 方法来进行的 <code>CORS</code> 配置，最后会在 Spring 的 <code>Interceptor</code> 或 <code>Handler</code> 中生效</p>
+</li>
+<li>
+<p>注入 <code>CorsFilter</code> 的方式会让 <code>CORS</code> 验证在 <code>Filter</code> 中生效</p>
+</li>
+<li>
+<p>引入 <code>Spring Security</code> 后，需要调用 <code>HttpSecurity.cors</code> 方法以保证 <code>CorsFilter</code> 会在身份验证相关的 <code>Filter</code> 之前执行</p>
+</li>
+<li>
+<p><code>HttpSecurity.cors</code> + <code>WebMvcConfigurer.addCorsMappings</code> 是一种相对低效的方式，会导致跨域请求分别在 <code>Filter</code> 和 <code>Interceptor</code> 层各经历一次 <code>CORS</code> 验证</p>
+</li>
+<li>
+<p><code>HttpSecurity.cors</code> + 注册 <code>CorsFilter</code> 与 <code>HttpSecurity.cors</code> + 注册 <code>CorsConfigurationSource</code> 在运行的时候是等效的</p>
+</li>
+<li>
+<p>在 Spring 中，没有通过 <code>CORS</code> 验证的请求会得到状态码为 403 的响应</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/" title="Spring 里那么多种 CORS 的配置方式，到底有什么区别">https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Spring/" rel="tag"><i class="fa fa-tag"></i> Spring</a>
+              <a href="/tags/Spring-Security/" rel="tag"><i class="fa fa-tag"></i> Spring Security</a>
+              <a href="/tags/cors/" rel="tag"><i class="fa fa-tag"></i> cors</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/05/23/HTTP-Headers-Origin/" rel="prev" title="HTTP Headers 之 Origin">
+      <i class="fa fa-chevron-left"></i> HTTP Headers 之 Origin
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/01/05/hexagonal-architecture/" rel="next" title="端口与适配器架构">
+      端口与适配器架构 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#_cors_是什么"><span class="nav-number">1.</span> <span class="nav-text">CORS 是什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_预检请求"><span class="nav-number">1.1.</span> <span class="nav-text">预检请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_小结"><span class="nav-number">1.2.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_几种配置的方式"><span class="nav-number">2.</span> <span class="nav-text">几种配置的方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_crossorigin_注解"><span class="nav-number">2.1.</span> <span class="nav-text">@CrossOrigin 注解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_实现_webmvcconfigurer_addcorsmappings_方法"><span class="nav-number">2.2.</span> <span class="nav-text">实现 WebMvcConfigurer.addCorsMappings 方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_注入_corsfilter"><span class="nav-number">2.3.</span> <span class="nav-text">注入 CorsFilter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_spring_security_中的配置"><span class="nav-number">2.4.</span> <span class="nav-text">Spring Security 中的配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_这些配置有什么区别"><span class="nav-number">3.</span> <span class="nav-text">这些配置有什么区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_filter_与_interceptor"><span class="nav-number">3.1.</span> <span class="nav-text">Filter 与 Interceptor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_webmvcconfigurer_addcorsmappings_方法做了什么"><span class="nav-number">3.2.</span> <span class="nav-text">WebMvcConfigurer.addCorsMappings 方法做了什么</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_注入_cors_配置"><span class="nav-number">3.2.1.</span> <span class="nav-text">注入 CORS 配置</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#_corsregistry_和_corsregistration"><span class="nav-number">3.2.1.1.</span> <span class="nav-text">CorsRegistry 和 CorsRegistration</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#_webmvcconfigurationsupport"><span class="nav-number">3.2.1.2.</span> <span class="nav-text">WebMvcConfigurationSupport</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_获取_cors_配置"><span class="nav-number">3.2.2.</span> <span class="nav-text">获取 CORS 配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_小结_2"><span class="nav-number">3.2.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_htttpsecurity_cors_方法做了什么"><span class="nav-number">3.3.</span> <span class="nav-text">HtttpSecurity.cors 方法做了什么</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_corsconfigurer_如何配置_cors_规则"><span class="nav-number">3.3.1.</span> <span class="nav-text">CorsConfigurer 如何配置 CORS 规则</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#_getcorsfilter_方法做了什么"><span class="nav-number">3.3.1.1.</span> <span class="nav-text">getCorsFilter 方法做了什么</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_httpsecurity_中的_filters_属性"><span class="nav-number">3.3.2.</span> <span class="nav-text">HttpSecurity 中的 filters 属性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_小结_3"><span class="nav-number">3.3.3.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2019/06/14/how-spring-implement-cors/";
+    this.page.identifier = "2019/06/14/how-spring-implement-cors/";
+    this.page.title = "Spring 里那么多种 CORS 的配置方式，到底有什么区别";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本文介绍 Spring Security 的身份认证的内容，研究 Spring Security 自带的身份认证方式和添加自己的身份认证方式的方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Security 中的身份认证">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="本文介绍 Spring Security 的身份认证的内容，研究 Spring Security 自带的身份认证方式和添加自己的身份认证方式的方法。">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/filter-chain.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/abstract-authentication-processing-filter.png">
+<meta property="og:image" content="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/default-filter-chain.png">
+<meta property="article:published_time" content="2020-06-07T22:04:29.000Z">
+<meta property="article:modified_time" content="2020-06-07T22:04:29.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Spring Security">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/filter-chain.png">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>Spring Security 中的身份认证 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          Spring Security 中的身份认证
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-07 22:04:29" itemprop="dateCreated datePublished" datetime="2020-06-07T22:04:29+00:00">2020-06-07</time>
+            </span>
+
+          
+            <span id="/2020/06/07/spring-security-authentication/" class="post-meta-item leancloud_visitors" data-flag-title="Spring Security 中的身份认证" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2020/06/07/spring-security-authentication/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/06/07/spring-security-authentication/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2020/06/07/spring-security-authentication/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/06/07/spring-security-authentication/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.1k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>13 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div class="paragraph">
+<p>本文介绍 Spring Security 的身份认证的内容，研究 Spring Security 自带的身份认证方式和添加自己的身份认证方式的方法。</p>
+</div>
+<div class="sect1">
+<h2 id="_身份认证相关组件">身份认证相关组件</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在<a href="/2020/05/31/spring-security-servlet-overview/">上一篇文章</a>中，我们了解到了 Spring Security 会将 <code>DelegatingFilterProxy</code> 插入到 Servlet Filter Chain 中，然后将要过滤的请求通过 <code>FilterChainProxy</code> 代理给匹配的 <code>SecurityFilterChain</code>；这些 <code>SecurityFilterChain</code> 中包含着真正做安全相关工作的 <code>Filter</code>。</p>
+</div>
+<div class="imageblock center">
+<div class="content">
+<img src="filter-chain.png" alt="filter chain">
+</div>
+<div class="title">Figure 1. 后面提到的 Filter 都是红色方框中的</div>
+</div>
+<div class="paragraph">
+<p>这些 <code>Filter</code> 中的一部分，他们的职责就是进行身份验证，比如 <code>UsernamePasswordAuthenticationFilter</code>；而他们中的大多数都有一个共同的父类 <code>AbstractAuthenticationProcessingFilter</code>。</p>
+</div>
+<div class="sect2">
+<h3 id="_abstractauthenticationprocessfilter">AbstractAuthenticationProcessFilter</h3>
+<div class="paragraph">
+<p>这个类是很多身份认证的 Filter 的父类，它已经实现了 <code>doFilter</code> 方法，流程如下：</p>
+</div>
+<div class="imageblock center">
+<div class="content">
+<img src="abstract-authentication-processing-filter.png" alt="abstract authentication processing filter">
+</div>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>本文不涉及其中的 sessionStrategy 部分</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p><code>doFilter</code> 已经帮我们搭好了这个流程，我们只需要关心其中的几个被调用的方法(红绿蓝三个颜色框)就可以了。</p>
+</div>
+<div class="sect3">
+<h4 id="_attemptauthentication">attemptAuthentication</h4>
+<div class="paragraph">
+<p>这是一个抽象方法。子类实现的时候，需要从 <code>HttpServletRequest</code> 中获取需要的信息，构建出一个 <code>Authentication</code> 实例，然后调用父类中的 <code>AuthenticationManager.authenticate()</code> 方法，对 <code>Authentication</code> 对象进行认证。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_unsuccessfulauthentication">unsuccessfulAuthentication</h4>
+<div class="paragraph">
+<p>这个方法已经被实现，子类也可以选择重写。根据父类的实现，这个方法将完成一下步骤：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>清理 <code>SecurityContextHolder</code></p>
+</li>
+<li>
+<p>清除 <code>RememberMeService</code> 中的信息（默认使用 <code>NullRememberMeService</code>）</p>
+</li>
+<li>
+<p>调用 <code>AuthenticationFailureHandler.onAuthenticationFailure()</code> 方法</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>默认使用的 <code>AuthenticationFailureHandler</code> 是 <code>SimpleUrlAuthenticationFailureHandler</code>，它的逻辑是：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>如果没有配置 <code>defaultFailureUrl</code> （默认没有）</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>发送 401 响应</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>根据配置的布尔值 <code>forwardToDestination</code> （默认为 <code>false</code>）判断</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>使用 Servlet forward 到配置的 <code>defaultFailureUrl</code></p>
+</li>
+<li>
+<p>使用 HTTP redirect 到配置的 <code>defaultFailureUrl</code></p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_successfulauthentication">successfulAuthentication</h4>
+<div class="paragraph">
+<p>与 <code>unsuccessfulAuthentication</code> 方法一样，这个方法也已经实现，并且可以被重写，但其中的逻辑却恰好相反：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>将 <code>attemptAuthentication</code> 返回的 <code>Authentication</code> 对象保存到 <code>SecurityContextHolder</code> 中</p>
+</li>
+<li>
+<p>保存登陆信息到 <code>RememberMeService</code> 中</p>
+</li>
+<li>
+<p>发布 <code>InteractiveAuthenticationSuccessEvent</code> 事件，这样可以被配置的 <code>EventListener</code> 处理</p>
+</li>
+<li>
+<p>调用 <code>AuthenticationSuccessHandler.onAuthenticationSuccess()</code> 方法</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>默认使用的 <code>AuthenticationSuccessHandler</code> 是 <code>SavedRequestAwareAuthenticationSuccessHandler</code>，其实现就是一次重定向。我们可以看看它重定向到哪里:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>当配置了 <code>alwaysUseDefaultTargetUrl</code> 或指定了 <code>targetUrlParameter</code> 且此参数存在的时候</p>
+<div class="ulist">
+<ul>
+<li>
+<p>如果配置了 <code>alwaysUseDefaultTargetUrl</code> 则重定向到 <code>defaultTargetUrl</code>，默认是 <code>/</code></p>
+</li>
+<li>
+<p>如果存在 <code>targetUrlParameter</code>（比如 redirect_uri 之类的比较常见的参数），则重定向到这个路径</p>
+</li>
+<li>
+<p>如果存在 <code>Referer</code>，则重定向到这个地址</p>
+</li>
+<li>
+<p>重定向到 <code>/</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>从 <code>RequestCache</code> 中找到了保存的请求</p>
+<div class="ulist">
+<ul>
+<li>
+<p>重定向到请求中设置的重定向地址</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>如果还是没有满足条件，则进行第一步里的逻辑</p>
+</li>
+</ul>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>关于 <code>RequestCache</code>：想象你正在访问一个需要认证的资源，这个时候网站会把你重定向到登陆页面；在你登陆成功后，又会重定向回刚才的资源。<code>RequestCache</code> 就是为了保存登陆之前的请求而设计的。在这里，默认使用基于 session 的实现。</p>
+</div>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authenticationmanager">AuthenticationManager</h3>
+<div class="paragraph">
+<p>在 <code>AbstractAuthenticationProcessingFilter</code> 中保存了一个 <code>AuthenticationManager</code>，它会在子类的 <code>attemptAuthentication</code> 方法中被使用。其职责是对 <code>Filter</code> 创建的 <code>Authentication</code> 对象进行身份验证，比如查询数据库匹配用户名密码、携带的 token 是否合法等。</p>
+</div>
+<div class="sect3">
+<h4 id="_providermanager_与_authenticationprovider">ProviderManager 与 AuthenticationProvider</h4>
+<div class="paragraph">
+<p>这是 <code>AuthenticationManager</code> 常用的实现。它没有实现任何认证逻辑，而是管理了一些 <code>AuthenticationProvider</code>，通过这些 provider 来实现真正的认证功能。</p>
+</div>
+<div class="paragraph">
+<p>每个 <code>AuthenticationProvider</code> 实现一种特定类型的身份认证方式，比如用户名密码登陆、OIDC 登陆等。他们可以通过 <code>Authentication</code> 的具体类型来判断是否支持这种 <code>Authentication</code> 需要的认证方式。</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_其他的一些_filter">其他的一些 Filter</h3>
+<div class="paragraph">
+<p>除了 <code>AbstractAuthenticationProcessFilter</code>，还有一些进行身份验证的 <code>Filter</code>，它们并没有继承这个类，而是基于 <code>OncePerRequestFilter</code> 自己实现了一套逻辑。这些 <code>Filter</code> 包括 <code>AuthenticationFilter</code> 、<code>BasicAuthenticationFilter</code> 、<code>OAuth2AuthorizationCodeGrantFilter</code> 等等。</p>
+</div>
+<div class="paragraph">
+<p>由于它们不再是 <code>AbstractAuthenticationProcessFilter</code>，所以不会再被要求使用 <code>AuthenticationManager</code>。尽管这样，当我们选择使用 <code>OncePerReuqestFilter</code> 来实现自定义的身份认证时，仍然可以考虑使用 <code>AuthenticationManager</code> 这种方式。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>个人觉得 <code>AuthenticationManager</code> 还算是个不错的设计，因为做到了职责分离。</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>甚至还有更加放飞自我的 <code>DigestAuthenticationFilter</code>，直接继承 <code>GenericFilterBean</code>，在实现上也是我行我素，这里就不探究了。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_exceptiontranslationfilter">ExceptionTranslationFilter</h3>
+<div class="paragraph">
+<p>这个 Filter 不是用来进行身份验证的，而是用来处理认证授权过程中产生的异常的。它可以处理 <code>AuthenticationException</code> 和 <code>AccessDeniedException</code>，分别表示认证失败和授权失败。这篇文章只关心如何处理 <code>AuthenticationException</code>。</p>
+</div>
+<div class="paragraph">
+<p>但是这个 <code>Filter</code> 默认被安排在 <code>SecurityFilterChain</code> 的倒数第二位，所以前面的 <code>Filter</code> 抛出的异常并不能被它捕获。但自定义的 <code>Filter</code> 可以加到它后面，这样就可以利用它来处理这两种异常。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>最后一位是 <code>FilterSecurityInterceptor</code>，可能会抛出 <code>AccessDeniedException</code>。</p>
+</div>
+</blockquote>
+</div>
+<div class="sect3">
+<h4 id="_处理_authenticationexception">处理 AuthenticationException</h4>
+<div class="paragraph">
+<p><code>ExceptionTranslationFilter</code> 对 <code>AuthenticationException</code> 的处理分三步：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>清理 <code>SecurityContextHolder</code> 中的身份信息</p>
+</li>
+<li>
+<p>将当前的 request、response 保存到 <code>RequestCache</code> 中（用途可以回顾一下 <a href="#_successfulauthentication">successfulAuthentication 方法</a>）</p>
+</li>
+<li>
+<p>调用 <code>AuthenticationEntryPoint.commence()</code> 方法</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>其中的 <code>AuthenticationEntryPoint</code> 具体实例取决于你的配置，默认会用到 <code>BasicAuthenticationEntryPoint</code>。这个接口的职责就是通过 <code>WWW-Authenticate</code> header 告诉客户端使用哪种方式进行身份验证。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_处理其他异常">处理其他异常</h4>
+<div class="paragraph">
+<p>对于 <code>AuthenticationException</code> 和 <code>AccessDeniedException</code> 之外的异常，<code>ExceptionTranslationFilter</code> 会将其转换成 <code>ServletException</code> 或 <code>RuntimeException</code> 抛出。</p>
+</div>
+<div class="paragraph">
+<p>如果想要处理这些异常，需要自己添加 <code>Filter</code> 实现。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_security_自动配置的_filterchainproxy">Spring Security 自动配置的 FilterChainProxy</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>当我们启动 Spring 应用之后，会在日志里看到打印所有配置的 <code>FilterChainProxy</code>。</p>
+</div>
+<div class="paragraph">
+<p>默认情况下，我们会看到这样的一条链：</p>
+</div>
+<div class="imageblock center">
+<div class="content">
+<img src="default-filter-chain.png" alt="default filter chain">
+</div>
+</div>
+<div class="paragraph">
+<p>这是引入 <code>spring-boot-starter-security</code> 之后自动配置的 <code>FilterChainProxy</code>，在引入更多的 security 相关的依赖和编写了相关配置之后，这个 filter chain 也会相应变化。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_几种内置的身份认证方式">几种内置的身份认证方式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>接下来，我们以 <code>UsernamePawwrodAuthenticationFilter</code> 和 <code>BasicAuthenticationFilter</code> 为例，看看他们是如何实现身份认证的。</p>
+</div>
+<div class="sect2">
+<h3 id="_usernamepasswordauthenticationfilter">UsernamePasswordAuthenticationFilter</h3>
+<div class="paragraph">
+<p><code>UsernamePasswordAuthenticationFilter</code> 是一个 <code>AbstractAuthenticationProcessingFilter</code> 的子类，实现了 <code>attemptAuthentication</code> 方法，没有重写其他方法。所以用户认证成功后，会被重定向到一个地址，具体逻辑参考上面的 <a href="#_successfulauthentication">successfulAuthentication 方法</a>。</p>
+</div>
+<div class="sect3">
+<h4 id="_attemptauthentication_2">attemptAuthentication</h4>
+<div class="paragraph">
+<p><code>attemptAuthentication</code> 方法会从 <code>HttpServletRequest.getParameter()</code> 方法中获取用户名密码，从而进行身份验证。具体从哪里获取用户名密码，则可以被子类通过重写 <code>obtainUsername()</code> 和 <code>obtainPassword()</code> 方法修改。</p>
+</div>
+<div class="paragraph">
+<p>之后，<code>UsernamePasswordAuthenticationFilter</code> 会构建出一个 <code>UsernameAuthenticationToken</code>，交给 <code>AuthenticationManager</code> 进行认证。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_daoauthenticationprovider">DaoAuthenticationProvider</h4>
+<div class="paragraph">
+<p>这是 <code>UsernamePasswordAuthenticationFilter</code> 对应的 <code>AuthenticationProvider</code>，负责对 <code>UsernameAuthenticationToken</code> 进行认证。</p>
+</div>
+<div class="paragraph">
+<p>它使用一个 <code>UserDetailsService</code> 来加载用户信息，使用 <code>PasswordEncoder</code> 来匹配用户的密码。</p>
+</div>
+<div class="paragraph">
+<p>这两个接口具体使用哪一个实现，取决于具体的配置。比如 <code>UserDetailsService</code> 就有 in memory 和 JDBC 的实现。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p><code>UsernamePasswordAuthenticationFilter</code> 是用于单独处理登录的 <code>Filter</code>，它不是用来在请求业务 API 时进行身份认证的 <code>Filter</code>。</p>
+</div>
+<div class="paragraph">
+<p>事实上，所有继承了 <code>AbstractAuthenticationProcessFilter</code> 但没有重写 <code>successfulAuthentication</code> 方法的 <code>Filter</code> 都是这样的，它们会在登陆成功后重定向到登录前的地址或默认的地址。这也符合它的语义：进行<strong>身份认证流程</strong>，而不是业务请求的一部分。</p>
+</div>
+</blockquote>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_basicauthenticationfilter">BasicAuthenticationFilter</h3>
+<div class="paragraph">
+<p>与 <code>UsernamePasswordAuthenticationFilter</code> 不同，<code>BasicAuthenticationFilter</code> 没有继承 <code>AbstractAuthenticationProcessingFilter</code>，而是直接继承 <code>OncePerRequestFilter</code>。因为它是被使用在请求业务 API 的请求上，而不是进行身份认证流程。</p>
+</div>
+<div class="paragraph">
+<p><code>BasicAuthenticationFilter</code> 的实现并不复杂，无非是从 <code>Authorization</code> header 中取出用户名密码，然后创建出 <code>UsernameAuthenticationToken</code>，接着调用 <code>AuthenticationManager.authenticate()</code> 方法。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>之所以它也会使用 <code>AuthenticationManager</code>，应该是出于复用的考虑。这样它就可以使用和 <code>UsernamePasswordAuthenticationFilter</code> 一样的 <code>AuthenticationProvider</code>。</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>它与 <code>UsernamePasswordAuthenticationFilter</code> 的区别在于认证之后的行为。</p>
+</div>
+<div class="paragraph">
+<p>无论认证成功与否，<code>BasicAuthenticationFilter</code> 都不会做出重定向的响应。</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>如果认证失败，则通过默认的 <code>BasicAuthenticationEntryPoint</code> 返回 401 响应</p>
+</li>
+<li>
+<p>如果认证成功，则继续执行 filter chain，这样就能执行到真正的业务方法</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_如何添加自己的身份认证方式">如何添加自己的身份认证方式</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>前面介绍了两种不同的 <code>Filter</code> 实现，以及它们被使用的场景，现在我们知道了该选择哪一种方式去实现自定义的 <code>Filter</code>。但是，如何把它们加入到 <code>SecurityFilterChain</code> 中去处理身份认证呢？</p>
+</div>
+<div class="sect2">
+<h3 id="_配置_securityfilterchain">配置 SecurityFilterChain</h3>
+<div class="paragraph">
+<p>我们如果需要任何对 <code>SecurityFilterChain</code> 的配置，都需要扩展 <code>WebSecurityConfigurerAdapter</code>，实现自己的一个配置类。每创建这样的一个实现，都会创建一个 <code>SecurityFilterChain</code> 加入到 <code>FilterChainProxy</code> 中。</p>
+</div>
+<div class="sect3">
+<h4 id="_配置_requestmathcer">配置 requestMathcer</h4>
+<div class="paragraph">
+<p>我们在前一篇文章提到过，<code>FilterChainProxy</code> 需要根据 url 来判断选择哪一个 <code>SecurityFilterChain</code>。我们需要将这个配置写到这个实现类中，比如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="meta">@Override</span>
+<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(HttpSecurity http)</span> <span class="keyword">throws</span> Exception </span>&#123;
+  http.requestMatchers(matcher -&gt; matcher.mvcMatchers(<span class="string">"/hello"</span>));
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这样，<code>FilterChainProxy</code> 就知道了对 <code>/hello</code> 的请求需要使用这个 <code>SecurityFilterChain</code>。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_向_securityfilterchain_加入_filter">向 SecurityFilterChain 加入 Filter</h4>
+<div class="paragraph">
+<p>现在有了对应的 <code>SecurityFilterChain</code>，我们就可以将自定义的 <code>Filter</code> 加入到这个 chain 中：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="meta">@Override</span>
+<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(HttpSecurity http)</span> <span class="keyword">throws</span> Exception </span>&#123;
+  http.addFilter(HelloFilter<span class="class">.<span class="keyword">class</span>)</span>;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>addFilter</code> 方法也有一些变体，可以控制 <code>Filter</code> 在 chain 中的位置，这里就不赘述了。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_添加_authenticationprovider">添加 AuthenticationProvider</h4>
+<div class="paragraph">
+<p>与 <code>Filter</code> 一样，<code>AuthenticationProvider</code> 也是被安排到单独的 <code>FilterChainProxy</code> 中的，并且需要自己配置。如果你的自定义 <code>Filter</code> 需要 <code>AuthenticationProvider</code> 的话，同样需要配置：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"><pre><code class="highlight java"><span class="meta">@Override</span>
+<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(AuthenticationManagerBuilder auth)</span> <span class="keyword">throws</span> Exception </span>&#123;
+  auth.authenticationProvider(HelloAuthenticationProvider<span class="class">.<span class="keyword">class</span>)</span>;
+&#125;</code></pre></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_总结">总结</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>这篇文章比较详细的梳理了 <code>AbstractAuthenticationProcessingFilter</code> 及其子类 <code>UsernamePasswordAuthenticationFilter</code> 的实现和 <code>BasicAuthenticationFilter</code> 的实现，了解了需要实现自定义身份验证的 <code>Filter</code> 时应该选择哪种方式：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>只是进行身份验证，完成后进行重定向，而不调用业务方法，那么就继承 <code>AbstractAuthenticationProcessFilter</code></p>
+</li>
+<li>
+<p>需要调用业务方法，身份验证是为了保护业务，那么就继承 <code>OncePerRequestFilter</code>，完全控制认证的流程</p>
+</li>
+</ul>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>当然，这不是一个强制的限制，你仍然可以通过重写 <code>AbstractAuthenticationProcessFilter.successfulAuthentication()</code> 方法来修改重定向的行为。</p>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>另外，也了解到了实现完 <code>Filter</code> 后，需要实现 <code>WebSecurityConfigurerAdapter</code>，将 <code>Filter</code> 加入到 <code>SecurityFilterChain</code> 中。</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>查看系列文章： <a href="/spring-security-servlet/">点这里</a></p>
+</div>
+</blockquote>
+</div>
+</div>
+</div>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/" title="Spring Security 中的身份认证">https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Spring/" rel="tag"><i class="fa fa-tag"></i> Spring</a>
+              <a href="/tags/Spring-Security/" rel="tag"><i class="fa fa-tag"></i> Spring Security</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/31/spring-security-servlet-overview/" rel="prev" title="Spring Security Servlet 概览">
+      <i class="fa fa-chevron-left"></i> Spring Security Servlet 概览
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/13/spring-security-authorization/" rel="next" title="Spring Security 的权限验证">
+      Spring Security 的权限验证 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#_身份认证相关组件"><span class="nav-number">1.</span> <span class="nav-text">身份认证相关组件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_abstractauthenticationprocessfilter"><span class="nav-number">1.1.</span> <span class="nav-text">AbstractAuthenticationProcessFilter</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_attemptauthentication"><span class="nav-number">1.1.1.</span> <span class="nav-text">attemptAuthentication</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_unsuccessfulauthentication"><span class="nav-number">1.1.2.</span> <span class="nav-text">unsuccessfulAuthentication</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_successfulauthentication"><span class="nav-number">1.1.3.</span> <span class="nav-text">successfulAuthentication</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_authenticationmanager"><span class="nav-number">1.2.</span> <span class="nav-text">AuthenticationManager</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_providermanager_与_authenticationprovider"><span class="nav-number">1.2.1.</span> <span class="nav-text">ProviderManager 与 AuthenticationProvider</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_其他的一些_filter"><span class="nav-number">1.3.</span> <span class="nav-text">其他的一些 Filter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_exceptiontranslationfilter"><span class="nav-number">1.4.</span> <span class="nav-text">ExceptionTranslationFilter</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_处理_authenticationexception"><span class="nav-number">1.4.1.</span> <span class="nav-text">处理 AuthenticationException</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_处理其他异常"><span class="nav-number">1.4.2.</span> <span class="nav-text">处理其他异常</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_spring_security_自动配置的_filterchainproxy"><span class="nav-number">2.</span> <span class="nav-text">Spring Security 自动配置的 FilterChainProxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_几种内置的身份认证方式"><span class="nav-number">3.</span> <span class="nav-text">几种内置的身份认证方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_usernamepasswordauthenticationfilter"><span class="nav-number">3.1.</span> <span class="nav-text">UsernamePasswordAuthenticationFilter</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_attemptauthentication_2"><span class="nav-number">3.1.1.</span> <span class="nav-text">attemptAuthentication</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_daoauthenticationprovider"><span class="nav-number">3.1.2.</span> <span class="nav-text">DaoAuthenticationProvider</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_basicauthenticationfilter"><span class="nav-number">3.2.</span> <span class="nav-text">BasicAuthenticationFilter</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_如何添加自己的身份认证方式"><span class="nav-number">4.</span> <span class="nav-text">如何添加自己的身份认证方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_配置_securityfilterchain"><span class="nav-number">4.1.</span> <span class="nav-text">配置 SecurityFilterChain</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#_配置_requestmathcer"><span class="nav-number">4.1.1.</span> <span class="nav-text">配置 requestMathcer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_向_securityfilterchain_加入_filter"><span class="nav-number">4.1.2.</span> <span class="nav-text">向 SecurityFilterChain 加入 Filter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#_添加_authenticationprovider"><span class="nav-number">4.1.3.</span> <span class="nav-text">添加 AuthenticationProvider</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2020/06/07/spring-security-authentication/";
+    this.page.identifier = "2020/06/07/spring-security-authentication/";
+    this.page.title = "Spring Security 中的身份认证";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

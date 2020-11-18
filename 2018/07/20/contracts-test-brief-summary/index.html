@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="现在的项目上在尝试契约测试这个东西，使用了大半年，再加上业余的一些研究，简单的总结一下。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="契约测试小结">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="现在的项目上在尝试契约测试这个东西，使用了大半年，再加上业余的一些研究，简单的总结一下。">
+<meta property="article:published_time" content="2018-07-20T00:40:10.000Z">
+<meta property="article:modified_time" content="2018-07-20T00:40:10.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Contracts-Test">
+<meta property="article:tag" content="Test">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>契约测试小结 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          契约测试小结
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-07-20 00:40:10" itemprop="dateCreated datePublished" datetime="2018-07-20T00:40:10+00:00">2018-07-20</time>
+            </span>
+
+          
+            <span id="/2018/07/20/contracts-test-brief-summary/" class="post-meta-item leancloud_visitors" data-flag-title="契约测试小结" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2018/07/20/contracts-test-brief-summary/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/07/20/contracts-test-brief-summary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2018/07/20/contracts-test-brief-summary/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2018/07/20/contracts-test-brief-summary/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div class="paragraph">
+<p>现在的项目上在尝试契约测试这个东西，使用了大半年，再加上业余的一些研究，简单的总结一下。</p>
+</div>
+<div class="sect1">
+<h2 id="_契约测试解决的问题">契约测试解决的问题</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>契约测试是在微服务实践中提出的，目的是为了避免在服务进行集成测试的时候，因为 <code>consumer</code> 对接口的期望和 <code>provider</code> 提供的接口的不一致导致的返工。因为这一反馈周期较长，返工的成本也就显得很高昂。</p>
+</div>
+<div class="paragraph">
+<p>契约测试就是为了解决这样的问题。它可以约定接口接收到什么样的请求的时候，返回什么样的响应。这样，在集成测试<strong>之前</strong>，就能够知道这些服务在 <code>API</code> 层面上能不能正常工作。</p>
+</div>
+<div class="paragraph">
+<p>这里强调在集成测试<strong>之前</strong>是想说明，契约测试不是用来替代集成测试的，而是测试方法的一种补充。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_契约测试的工具">契约测试的工具</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>目前来看，契约测试有两大主流工具， <a href="https://docs.pact.io/" target="_blank" rel="noopener">Pact</a> 和 <a href="https://cloud.spring.io/spring*cloud*contract/" target="_blank" rel="noopener">Spring Cloud Contract</a>。</p>
+</div>
+<div class="sect2">
+<h3 id="_spring_cloud_contract">Spring Cloud Contract</h3>
+<div class="paragraph">
+<p>作为抱紧 <code>Spring</code> 大腿的契约测试工具，<code>Spring Cloud Contract</code> 成为了以 <code>Spring Cloud</code> 作为框架的微服务项目的首选，也是众多有微服务和契约测试经验的工程师的推荐。它主要有以下特点：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>使用 <a href="http://groovy*lang.org/" target="_blank" rel="noopener">Groovy</a> 语言定义 <code>DSL</code>，利用了 <code>Groovy</code> 灵活的语法，可以帮助开发者写出满足需求的契约。（后来又支持了 <code>yaml</code> 的语法）</p>
+</li>
+<li>
+<p><code>Spring</code> 提供了一系列的工具进行契约测试：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>可以在 <code>consumer</code> 和 <code>provider</code> 的单元测试中进行契约测试</p>
+</li>
+<li>
+<p>提供 <code>Docker</code>、<code>jar</code> 以及 <code>Maven</code> 包，用于启动 <code>stub runner</code></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>独立的契约仓库管理契约</p>
+</li>
+<li>
+<p>为契约生成独立的 <code>jar</code> 包，提供给 <code>consumer</code> 或 <code>provider</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><code>Spring Cloud Contract</code> 的一个明显的缺点就是，只能支持能够使用 <code>Spring</code> 框架的语言，这也是抱紧 <code>Spring</code> 大腿的后果。为了解决这个问题，<code>Spring Cloud Contract</code> 又开始支持 <code>yaml</code> 格式的 <code>DSL</code> 。但是这种方式却无法为不能使用 <code>Spring</code> 的语言提供单元测试的方案，只能自己解决这个问题。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pact">Pact</h3>
+<div class="paragraph">
+<p><code>Pact</code> 是一个专注于契约测试的工具，与 <code>Spring Cloud Contract</code> 不同的是，<code>Pact</code> 一定是 <a href="https://martinfowler.com/articles/consumerDrivenContracts.html" target="_blank" rel="noopener">Consumer Driven Contracts</a>。所以我们会发现，<code>Pact</code> 会在 <code>consumer</code> 端的契约测试通过后，自动生成 <code>json</code> 格式的契约文件。然后，<code>provider</code> 可以通过文件系统、http 或者 <code>Broker</code> 的方式获取契约文件，进行契约测试。</p>
+</div>
+<div class="paragraph">
+<p>另外，<code>Pact</code> 支持多种语言，没有 <code>Spring Cloud Contract</code> 的语言限制。这样不仅适用于使用不同语言的微服务之间，甚至可以用于Web项目中的接口约定。</p>
+</div>
+<div class="paragraph">
+<p><code>Pact</code> 还有一个杀手级功能： <a href="https://docs.pact.io/getting_started/versioning_in_the_pact_broker" target="_blank" rel="noopener">Broker</a> 。它的基本功能是存储 <code>consumer</code> 生成的契约文件，<code>provider</code> 可以利用它来获取这些契约文件用于测试。但它还提供功能用于追踪哪些版本的契约通过了 <code>provider</code> 端的契约测试，这样在部署的时候就能清楚的哪些版本能够被部署。</p>
+</div>
+<div class="paragraph">
+<p>不过对于 <code>Java</code> 语言的 <code>provider</code> （其他语言的支持我没有研究），<code>Pact</code> 没法提供像 <code>Spring Cloud Contract</code> 一样的单元测试支持，只能将整个 <code>provider</code> 启动起来进行 <code>API测试</code> 。</p>
+</div>
+<div class="paragraph">
+<p>简单的总结一下这两个工具：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Consumer</code> 端：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>都能提供 <code>CDC</code> 的支持，不过 <code>Pact</code> 是必须消费者驱动</p>
+</li>
+<li>
+<p><code>Spring Cloud Contract</code> 对消费者的技术选择有要求，否则只能使用 <code>stub runner</code> 或者自己通过 <code>yaml</code> 的方式来解决</p>
+</li>
+<li>
+<p><code>Pact</code> 不用写契约文件，是由 <code>Pact</code> 生成</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><code>Provider</code> 端：</p>
+<div class="ulist">
+<ul>
+<li>
+<p>都能提供测试支持</p>
+</li>
+<li>
+<p><code>Spring Cloud Contract</code> 支持单元测试，但是同样也只支持 <code>Spring</code> 技术栈</p>
+</li>
+<li>
+<p><code>Pact</code> 只能进行 <code>API测试</code> ，但不限定技术栈</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>契约文件管理：</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Spring Cloud Contract</code> 需要手动写契约，自行管理</p>
+</li>
+<li>
+<p><code>Pact</code> 不用关心契约文件，由消费者的单元测试生成，生产者也不用关心契约文件的管理</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_契约测试的一点经验">契约测试的一点经验</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>契约测试，测的不是数据内容，而是接口返回的数据格式。</p>
+<div class="paragraph">
+<p>也就是说，当接口的输入为 1 或者 2 都能得到期望的结果而没异常产生时，就没有必要写两份契约。</p>
+</div>
+</li>
+<li>
+<p>注意管理契约测试的数据。</p>
+<div class="paragraph">
+<p>主要是针对像 <code>Spring Cloud Contract</code> 这样的 <code>by sample</code> 类型的契约测试工具，因为是按例子来写契约，就需要注意接口之间的业务关系，需要将契约中的数据串联起来。</p>
+</div>
+</li>
+<li>
+<p>契约测试会加大工作量</p>
+<div class="paragraph">
+<p>这是毋庸置疑的一点，因为我们把集成测试阶段的一部分事情放到了开发阶段，本身就加大了开发阶段的工作量。再加上契约测试带来的管理问题，总体而言，工作量是增加的。但不要因为这一点来质疑“将在集成测试阶段发现问题带来的长反馈周期缩短”这一初衷，只是，契约测试可能并不是一条最好的路。</p>
+</div>
+</li>
+<li>
+<p>契约测试能给开发者信心</p>
+<div class="paragraph">
+<p>当我们的测试能够通过契约测试的时候，说明在集成的时候不太会有什么问题。对于开发人员来讲，就不太需要担心在集成时发现接口数据格式对接不上这种问题了。之所以说不太需要担心，是因为有的契约测试新手可能会绕过这个测试（也可能是`CI`没有做好的原因），假装做好了，等到集成时才发现gg。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/" title="契约测试小结">https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Contracts-Test/" rel="tag"><i class="fa fa-tag"></i> Contracts-Test</a>
+              <a href="/tags/Test/" rel="tag"><i class="fa fa-tag"></i> Test</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/11/04/Http-hearders-referer/" rel="prev" title="Http Header 中的 referer 字段">
+      <i class="fa fa-chevron-left"></i> Http Header 中的 referer 字段
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/08/02/biref-summary-of-one-year-of-work/" rel="next" title="码农一年小结">
+      码农一年小结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#_契约测试解决的问题"><span class="nav-number">1.</span> <span class="nav-text">契约测试解决的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_契约测试的工具"><span class="nav-number">2.</span> <span class="nav-text">契约测试的工具</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_spring_cloud_contract"><span class="nav-number">2.1.</span> <span class="nav-text">Spring Cloud Contract</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_pact"><span class="nav-number">2.2.</span> <span class="nav-text">Pact</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_契约测试的一点经验"><span class="nav-number">3.</span> <span class="nav-text">契约测试的一点经验</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2018/07/20/contracts-test-brief-summary/";
+    this.page.identifier = "2018/07/20/contracts-test-brief-summary/";
+    this.page.title = "契约测试小结";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

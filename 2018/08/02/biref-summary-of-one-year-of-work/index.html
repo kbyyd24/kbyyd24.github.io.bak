@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="Chinese">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"blog.gaoyuexiang.cn","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"right","display":"always","mobile":true,"padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"scrollpercent":true,"enable":true,"sidebar":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"disqus,valine","storage":true,"lazyload":false,"nav":{"disqus":{"order":-1},"valine":{"order":-2}}},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="还差几天就工作满一年了，记录一下一些不足以写成博客的经验吧。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="码农一年小结">
+<meta property="og:url" content="https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/index.html">
+<meta property="og:site_name" content="无糖拿铁，谢谢">
+<meta property="og:description" content="还差几天就工作满一年了，记录一下一些不足以写成博客的经验吧。">
+<meta property="article:published_time" content="2018-08-02T23:29:30.000Z">
+<meta property="article:modified_time" content="2018-08-02T23:29:30.000Z">
+<meta property="article:author" content="Yuexiang Gao">
+<meta property="article:tag" content="Blog">
+<meta property="article:tag" content=" 博客">
+<meta property="article:tag" content=" Yuexiang">
+<meta property="article:tag" content=" yuexiang">
+<meta property="article:tag" content=" 悦翔">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>码农一年小结 | 无糖拿铁，谢谢</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="无糖拿铁，谢谢" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="无糖拿铁，谢谢" type="application/rss+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">无糖拿铁，谢谢</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-topics">
+
+    <a href="/topics" rel="section"><i class="fa fa-fw fa-th-list"></i>topics</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/kbyyd24" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="Chinese">
+    <link itemprop="mainEntityOfPage" href="https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Yuexiang Gao">
+      <meta itemprop="description" content="Challenge makes me happy.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="无糖拿铁，谢谢">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          码农一年小结
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-02 23:29:30" itemprop="dateCreated datePublished" datetime="2018-08-02T23:29:30+00:00">2018-08-02</time>
+            </span>
+
+          
+            <span id="/2018/08/02/biref-summary-of-one-year-of-work/" class="post-meta-item leancloud_visitors" data-flag-title="码农一年小结" title="Views">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2018/08/02/biref-summary-of-one-year-of-work/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/08/02/biref-summary-of-one-year-of-work/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2018/08/02/biref-summary-of-one-year-of-work/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2018/08/02/biref-summary-of-one-year-of-work/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div class="paragraph">
+<p>还差几天就工作满一年了，记录一下一些不足以写成博客的经验吧。</p>
+</div>
+<div class="sect1">
+<h2 id="_关于数据库访问层">关于数据库访问层</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>做后端开发必定是要访问数据库的，经历的几个项目分别使用了 <code>JDBCTemplate</code> 和 <code>QueryDSL</code> ，一年的使用下来，让我对 <code>JPA</code> 越来越厌恶。</p>
+</div>
+<div class="sect2">
+<h3 id="_querydsl">QueryDSL</h3>
+<div class="paragraph">
+<p><code>QueryDSL</code> 是基于 <code>JPA</code> 的，它为我们提供了一种类型安全的类似于 <code>SQL</code> 的 <code>dsl</code>。从语法上来看，确实能带来一定的价值，但相对于负面作用，我认为是得不偿失。</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>需要预编译</p>
+<div class="paragraph">
+<p>要使用 <code>QueryDSL</code>，需要先利用它的工具对 <code>@Entity</code> 注解的类进行编译，生成一个 <code>Q</code> 开头的类，用来实现便利的查询工作。虽然不是一个麻烦事，但确实在工作中造成了一些问题。比如在进行单元测试调试时，如果有对 <code>@Entity</code> 的修改，还得手动的执行一下编译任务。</p>
+</div>
+</li>
+<li>
+<p>生成的 <code>SQL</code> 有可能不符合预期</p>
+<div class="paragraph">
+<p>这是很有可能发生的事情，特别是对于新上手 <code>QueryDSL</code> 的人来说，更是摸不清头脑。这样就需要在每次修改了 <code>DAO</code> 类之后运行一下测试或者启动一下项目才能知道生成的 <code>SQL</code> 到底长什么样子。不过一般来讲，当你熟悉他的语法之后，这样的事情并不会造成太大的困扰。但即使是这样，我们仍然要在每次修改了 <code>DAO</code> 类之后查看一下生成的 <code>SQL</code> 是否符合我们的预期。因为我们就遇到过一些神奇的事情，得到的 <code>SQL</code> 并不符合预期，想来想去只能是 <code>QueryDSL</code> 的 <code>bug</code>。</p>
+</div>
+<div class="paragraph">
+<p>自动生成 <code>SQL</code> 还会带来一个问题就是，开发者失去了对 <code>SQL</code> 的控制。我曾经也是“在代码里不要出现一句 <code>SQL</code>”的坚定支持者，但是当我经历了不得不对 <code>SQL</code> 进行定制时，才发现这种想法多么可笑。当然，<code>QueryDSL</code> 有办法通过 <code>Expressions.stringTemplate()</code> 方法来定制你想定制的那部分 <code>SQL</code>，但这和其他的 <code>QueryDSL</code> 组合起来时，总显得那么格(bu)格(gou)不(you)入(ya)。</p>
+</div>
+</li>
+<li>
+<p><code>JPA</code> 事务对测试的影响</p>
+<div class="paragraph">
+<p>我们一般会在 <code>Controller</code> 的下一层，也就是 <code>Service</code> 这一层加上 <code>@Transactional</code> 注解，这样当我们的某个环节出错的时候，就能整个事务回滚，保证操作的原子性。对于这中间的这些 <code>Service</code> ，我们一般会采用没有 <code>Spring</code> 上下文的单元测试，这样可以让这部分的测试负担没有那么重。但是因为 <code>JPA</code> 的加入，情况变得复杂，就算我们的代码通过了这样的单元测试，也不能保证能够正确的执行，测试也就变得没有意义。一种解决办法是不再采用这种单元测试，而使用有 <code>Spring</code> 上下文的测试，这样能够将 <code>JPA</code> 的行为纳入测试中。</p>
+</div>
+<div class="paragraph">
+<p>但我个人来讲，可能是由于对 <code>JPA</code> 不足够熟悉，不太愿意继续使用 <code>JPA</code>，而更愿意使用 <code>JDBCTemplate</code>。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jdbctemplate">JDBCTemplate</h3>
+<div class="paragraph">
+<p>其实一开始使用 <code>JDBCTemplate</code> 的时候我是抗拒的，那时我还是 <code>JPA</code> 的支持者，总觉得在代码里面插入 <code>SQL</code> 很不优雅。但是在业务复杂的项目中使用过 <code>JPA</code> 后发现，<code>JDBCTemplate</code> 真香。相比与 <code>JPA</code>，<code>JDBCTemplate</code> 有这些优势：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>更轻量</p>
+<div class="paragraph">
+<p>这一点应该毋庸置疑，毕竟少了一大堆复杂的东西。</p>
+</div>
+</li>
+<li>
+<p>开发者能够完全控制 <code>SQL</code></p>
+<div class="paragraph">
+<p>特别是当你需要特别的 <code>SQL</code> 的时候，会爱上这一点的。至于代码和数据库解耦这种事情，我的理解是我的数据库可以随意更换，但都是一种数据库，很难有从 <code>MySQL</code> 切换到 <code>PostgreSQL</code> 这种事发生。所以，代码里写 <code>SQL</code> 带来的耦合不一定会让你痛苦。</p>
+</div>
+</li>
+<li>
+<p>无需担心测试通过但不工作的情况</p>
+<div class="paragraph">
+<p>没有了 <code>JPA</code> ，我们的 <code>Service</code> 由我们全权控制，也就不会出现因为 <code>JPA</code> 事务导致通过测试的代码不能正确执行的情况。</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_测试用的数据库">测试用的数据库</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在我们的代码部署到 <code>dev</code> 环境之前，一定是会经历一个 <code>CI</code> 的过程的。在 <code>CI</code> 中，我们会运行我们写的所有测试，其中就包括针对 <code>DAO</code> 的测试，这些测试一定是要访问数据库的。那么在 <code>pipeline</code> 中执行测试时访问什么数据库就是一个问题。</p>
+</div>
+<div class="paragraph">
+<p>过去，我们会考虑采用保存在内存中的 <code>H2</code> 数据库，它随我们的测试启动而启动，随测试结束而结束。看上去这简直是个完美的方案。然而，我们实践发现了一些问题，<code>H2</code> 不支持 <code>MySQL</code> 的全部语法，即使设置了 <code>model=mysql</code>。这使得我们不得不采用它支持的语法来绕过这些问题，甚至于需要迁移 <code>JSON</code> 格式的数据时会发现 <code>migration</code> 没法进行下去了，因为 <code>H2</code> 压根没有 <code>JSON</code> 的任何支持。最后，我们幸运的利用 <code>flyway</code> 支持的 <code>Java Migration</code> 绕过这个限制。</p>
+</div>
+<div class="paragraph">
+<p>所以我们又重新思考有什么别的方法可以解决当前的问题。</p>
+</div>
+<div class="paragraph">
+<p>其中一个方案是，在执行测试时，利用 <code>Gradle</code> 的插件启动一个 <code>Docker</code> 容器，测试完成后删掉这个容器。但是这样就要求我们的 <code>pipeline</code> 能够支持 <code>Docker</code>。并且，我们在调试 <code>DAO</code> 测试时也没有办法使用到这个容器中的数据库。不过这两个问题也有办法解决，这个方案也是值得尝试的。</p>
+</div>
+<div class="paragraph">
+<p>另一个方向是同事前几天发现的 <a href="https://objectpartners.com/2017/06/19/using-mariadb4j-for-a-spring-boot-embedded-database/" target="_blank" rel="noopener">MariaDB4j</a> ，单从这篇文章来看，对于使用 <code>MySQL</code> 的项目，确实是替代 <code>H2</code> 的不错方案。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hateoas">HATEOAS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>HATEOAS</code> 是 Hypermedia As The Engine Of Application State 的缩写，处于 Richardson 博士提出的 <a href="https://martinfowler.com/articles/richardsonMaturityModel.html" target="_blank" rel="noopener">REST Maturity Model</a> 中的 Level 3，可以用来引导客户端探索服务端功能。</p>
+</div>
+<div class="paragraph">
+<p>说实话，我对这个东西的理解不是很深刻，目前实践来看，更适合 Mobile 这样的单一入口的项目，而不适用于网页应用。这是因为整个应用需要一个入口，从这个入口进入才能获得更多的服务。或者，是我们的实践不好，应该支持任意入口进入都能获得完整的服务地图。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ddd">DDD</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>领域驱动设计绝对是能够帮助你降低项目无谓复杂度的方法论，当然，前提是你的项目足够复杂。至于如何判断呢？我的理解是当你修改一个业务逻辑却需要到多个地方修改同样的逻辑、或者干脆不知道在哪里能够找到你想找的代码时，就可以考虑 <code>DDD</code> 了。</p>
+</div>
+<div class="paragraph">
+<p>之所以着么推荐 <code>DDD</code> ，是因为在体验了没有采用 <code>DDD</code> 的项目需求变得日益复杂之后，才发现 <code>DDD</code> 的优势。他能够帮助开发者对代码有更加清晰的了解，也能够将业务表达在代码中。这样既可以将相同的业务代码集中，也能够帮助开发者更容易的找到代码。</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>以上就是一年工作的一点经验总结，看起来没什么进步，还是要多写博客才行啊。</p>
+</div>
+</div>
+</div>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yuexiang Gao WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpeg" alt="Yuexiang Gao Alipay">
+        <p>Alipay</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Yuexiang Gao
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/" title="码农一年小结">https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/images/wechat_channel.jpg">
+                <span class="icon">
+                  <i class="fa fa-wechat"></i>
+                </span>
+
+                <span class="label">WeChat</span>
+              </a>
+            </div>
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/rss2.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/07/20/contracts-test-brief-summary/" rel="prev" title="契约测试小结">
+      <i class="fa fa-chevron-left"></i> 契约测试小结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/08/21/create-your-own-spring-auto-configuration/" rel="next" title="创建自己的 Spring auto-configuration">
+      创建自己的 Spring auto-configuration <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-valine">valine</a></li>
+            <li class="tab"><a href="#comment-disqus">disqus</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane valine" id="comment-valine">
+              <div class="comments" id="valine-comments"></div>
+            </div>
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#_关于数据库访问层"><span class="nav-number">1.</span> <span class="nav-text">关于数据库访问层</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#_querydsl"><span class="nav-number">1.1.</span> <span class="nav-text">QueryDSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#_jdbctemplate"><span class="nav-number">1.2.</span> <span class="nav-text">JDBCTemplate</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_测试用的数据库"><span class="nav-number">2.</span> <span class="nav-text">测试用的数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_hateoas"><span class="nav-number">3.</span> <span class="nav-text">HATEOAS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#_ddd"><span class="nav-number">4.</span> <span class="nav-text">DDD</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Yuexiang Gao</p>
+  <div class="site-description" itemprop="description">Challenge makes me happy.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/kbyyd24" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;kbyyd24" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:melo@gaoyuexiang.cn" title="E-Mail → mailto:melo@gaoyuexiang.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/images/wechat_channel_with_name.png" title="WeChat → &#x2F;images&#x2F;wechat_channel_with_name.png"><i class="fa fa-fw fa-wechat"></i>WeChat</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">蜀ICP备15031888号-2 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yuexiang Gao</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">138k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">4:11</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://blog-gaoyuexiang-cn.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://blog.gaoyuexiang.cn/2018/08/02/biref-summary-of-one-year-of-work/";
+    this.page.identifier = "2018/08/02/biref-summary-of-one-year-of-work/";
+    this.page.title = "码农一年小结";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://blog-gaoyuexiang-cn.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'Voz5TpLaiKvWLiVk63CrRybt-gzGzoHsz',
+      appKey     : 'xzDAABvBBG6vK7iwgd1VKUnw',
+      placeholder: "",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
