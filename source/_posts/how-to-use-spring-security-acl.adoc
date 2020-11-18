@@ -2,12 +2,12 @@
 title: 如何使用 Spring Security ACL
 tags:
   - spring
-  - spirng security
+  - spring security
   - spring security acl
   - spring security acl demo
 description: 使用 Spring Security ACL 的例子
 date: 2020-07-18 12:17:26
-updated: 2020-07-18 12:17:26
+updated: 2020-11-18 23:23:26
 ---
 
 
@@ -401,4 +401,4 @@ ____
 
 尽管如此，我仍然认为 ACL 是一种不错的设计，很好的分离了业务和访问控制的关注点，抽象的接口也可以方便的进行扩展，值得去试一试。
 
-
+> 查看系列文章： link:/spring-security-servlet/[点这里]
