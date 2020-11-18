@@ -13,3 +13,5 @@ link:/2020/06/07/spring-security-authentication/[Spring Security 中的身份认
 link:/2020/06/13/spring-security-authorization/[Spring Security 中的权限验证]
 
 link:/2020/07/02/spring-security-acl-conception-and-component/[Spring Security ACL 核心概念和组件]
+
+link:/2020/07/18/how-to-use-spring-security-acl/[如何使用 Spring Security ACL]

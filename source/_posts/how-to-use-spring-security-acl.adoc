@@ -1,10 +1,10 @@
 ---
 title: 如何使用 Spring Security ACL
 tags:
-  - spring
-  - spring security
-  - spring security acl
-  - spring security acl demo
+  - Spring
+  - Spring Security
+  - Spring Security ACL
+  - Spring Security ACL demo
 description: 使用 Spring Security ACL 的例子
 date: 2020-07-18 12:17:26
 updated: 2020-11-18 23:23:26
